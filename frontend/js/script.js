@@ -229,6 +229,25 @@ async function deleteCadastro(id, type) {
     }
 }
 
+// --- ADICIONE ISTO AO SEU SCRIPT.JS PARA O LÁPIS FUNCIONAR ---
+
+async function editCadastro(id, type) {
+    const newName = prompt("Digite o novo nome:");
+    if(!newName) return;
+
+    const endpoint = type === 'cliente' ? 'clientes' : 'fornecedores';
+    try {
+        await fetch(`${API_URL}/api/${endpoint}/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome: newName })
+        });
+        loadCadastros(); // Atualiza a lista na hora
+    } catch(e) {
+        alert("Erro ao editar.");
+    }
+}
+
 // Editar
 async function editCadastro(id, type) {
     const newName = prompt("Digite o novo nome:");
