@@ -1,134 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - M&M Cebolas</title>
-    
+    <title>Login - Wilson Control</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="login.css">
     <link rel="stylesheet" href="../css/login.css">
-    <link rel="stylesheet" href="../css/loading.css">
     <link rel="stylesheet" href="../css/estilo_geral.css">
-    <link rel="icon" type="image/png" href="/Imgs/logo_M&M.jpg">
-
+    <link rel="shortcut icon" href="../Imgs/logo.png" type="image/x-icon">
+    <script>
+        // Socket.io: server ou local
+        var script = document.createElement('script');
+        if (window.location.protocol === 'file:') {
+            // Electron (local)
+            script.src = "http://localhost:3000/socket.io/socket.io.js";
+        } else {
+            // Navegador
+            script.src = "/socket.io/socket.io.js";
+        }
+        document.head.appendChild(script);
+    </script>
     <style>
-        /* Garante que o body ocupe a tela toda mas não quebre a barra */
-        body { 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            /* Mantém o background e fontes que você já tem */
+        /* Ajuste: barra no topo */
+        body {
+            padding-top: 38px;
+            /* Espaço para barra */
+            overflow: hidden;
         }
 
-        /* --- CORREÇÃO AQUI --- */
-        #custom-titlebar {
-            display: flex;
-            align-items: center;
-            background-color: #202020;
-            height: 32px;
-            padding: 0 15px;
-            -webkit-app-region: drag;
-            border-bottom: 1px solid #000;
-            
-            /* ESSAS LINHAS CONSERTAM O BUG: */
-            position: absolute; /* Tira a barra do fluxo flex do login */
-            top: 0;             /* Cola no teto */
-            left: 0;            /* Cola na esquerda */
-            width: 100%;        /* Força ocupar a largura total */
-            z-index: 9999;      /* Garante que fique acima de tudo */
-            box-sizing: border-box; /* Garante que o padding não estoure a largura */
-        }
-
-        .window-controls {
-            display: flex;
-            gap: 8px;
-            -webkit-app-region: no-drag;
-        }
-
-        .control-btn {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        /* Cores Apple */
-        .close-btn { background-color: #FF5F56; border: 1px solid #E0443E; }
-        .min-btn   { background-color: #FFBD2E; border: 1px solid #DEA123; }
-        .max-btn   { background-color: #27C93F; border: 1px solid #1AAB29; }
-
-        .control-btn svg {
-            width: 6px;
-            height: 6px;
-            opacity: 0;
-            stroke: #4a0002;
-            stroke-width: 2;
-            stroke-linecap: round;
-            transition: opacity 0.2s ease;
-        }
-
-        .window-controls:hover .control-btn svg { opacity: 0.6; }
-        .window-controls:hover .control-btn:hover svg { opacity: 1; }
-        .control-btn:active { transform: scale(0.9); }
-
-        .app-title-bar {
-            flex-grow: 1;
-            text-align: center;
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            color: #888;
-            margin-right: 60px;
-            letter-spacing: 1px;
-            pointer-events: none; /* Deixa arrastar clicando no texto */
+        #titlebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 99999;
         }
     </style>
 </head>
-<body>
-    
-    <header id="custom-titlebar">
+
+<body onclick="closeContextMenu()">
+
+    <header id="titlebar">
         <div class="window-controls">
-            <div class="control-btn close-btn" id="closeBtn" title="Fechar">
-                <svg viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" /></svg>
-            </div>
-            <div class="control-btn min-btn" id="minBtn" title="Minimizar">
-                <svg viewBox="0 0 10 2"><path d="M0,1 L10,1" /></svg>
-            </div>
-            <div class="control-btn max-btn" id="maxBtn" title="Maximizar">
-                <svg viewBox="0 0 10 10"><path d="M0,10 L10,0 M1,1 L9,9" /></svg>
-            </div>
+            <div class="control-btn close-btn" id="closeBtn" title="Fechar"><svg viewBox="0 0 10 10">
+                    <path d="M1,1 L9,9 M9,1 L1,9" />
+                </svg></div>
+            <div class="control-btn min-btn" id="minBtn" title="Minimizar"><svg viewBox="0 0 10 2">
+                    <path d="M0,1 L10,1" />
+                </svg></div>
+            <div class="control-btn max-btn" id="maxBtn" title="Maximizar"><svg viewBox="0 0 10 10">
+                    <path d="M0,10 L10,0 M1,1 L9,9" />
+                </svg></div>
         </div>
-        <div class="app-title-bar">M&M CEBOLAS</div>
-        
+        <div class="app-title">CONTROLADORIA AW - LOGIN</div>
     </header>
-    <div id="loading-screen" class="loading-screen">
-        <div class="loader-wrapper" style="color:white; font-weight:bold; font-size:1.2rem;">
-             <i class="fas fa-circle-notch fa-spin"></i> Carregando Sistema...
+
+    <div id="loading-screen" class="loading-screen hidden">
+        <div class="loader-wrapper">
+            <div class="truck-wrapper">
+                <div class="truck">
+                    <div class="truck-container"></div>
+                    <div class="glases"></div>
+                    <div class="bonet"></div>
+                    <div class="base"></div>
+                    <div class="base-aux"></div>
+                    <div class="wheel-back"></div>
+                    <div class="wheel-front"></div>
+                    <div class="smoke"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="modal">
-        <div class="logo-area">
-            <img src="../Imgs/Logo_M&M_Cebolas.png" alt="logo" style="width: 100px; height: 100px;">
-            <h1>M&M <span style="color: #E89C31;">CEBOLAS</span></h1>
-            
-        </div>
-        <p>Sistema de Gestão Integrado</p>
-        
-        <form onsubmit="fazerLogin(event)">
-            <input type="text" id="loginUser" placeholder="Usuário" value="admin">
-            <input type="password" id="loginPass" placeholder="Senha" value="123">
-            <button type="submit">ACESSAR SISTEMA</button>
-        </form>
-        
+        <img src="../Imgs/logo-dark.png" alt="Logo Wilson" class="logo-img" style="width: 170px; margin-bottom: 10px;">
+
+        <h2 style="font-size: 1rem; color: #555;">Login</h2>
+        <p>Acesso Restrito</p>
+
+        <input type="text" id="loginUser" placeholder="Usuário (Ex: Balanca)">
+        <input type="password" id="loginPass" placeholder="Senha">
+        <button onclick="fazerLogin()">ENTRAR</button>
+
         <div class="links">
-            <a onclick="alert('Contate o administrador do sistema.')">Esqueceu a senha?</a>
+            <a onclick="abrirRegistro()">Solicitar Acesso</a>
+        </div>
+    </div>
+
+    <div id="modalRegistro" class="overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px; color:#212121;">Solicitar Novo Acesso</h3>
+            <form id="formRegistro">
+                <input type="text" id="regNome" placeholder="Nome Completo" required>
+                <input type="text" id="regDisplay" placeholder="Nome de Assinatura (opcional)">
+                <input type="text" id="regUser" placeholder="Usuário Desejado" required>
+                <input type="password" id="regPass" placeholder="Senha (será usada pelo encarregado)" required>
+                <label style="font-size:0.9rem; margin-top:6px">Tipo de Conta</label>
+                <select id="regType">
+                    <option value="Funcionario">Funcionário</option>
+                    <option value="Encarregado">Encarregado</option>
+                </select>
+                <label style="font-size:0.9rem; margin-top:6px">Setor</label>
+                <select id="regSetor">
+                    <option value="recebimento">Recebimento</option>
+                    <option value="conferencia">Conferencia</option>
+                </select>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="fecharRegistro()"
+                        style="background:#ccc; color:#333;">Cancelar</button>
+                    <button type="submit">Solicitar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -137,31 +120,42 @@
     </div>
 
     <div id="modalSwitcher" class="overlay">
-        <div class="modal-content">
-            <h3 style="margin-bottom:15px; color:#1A5632;">Selecionar Conta</h3>
+        <div class="modal-content" style="width: 350px;">
+            <h3 style="margin-bottom:15px; color:#212121;">Selecionar Conta Teste</h3>
             <div id="listaContas"></div>
-            <button onclick="document.getElementById('modalSwitcher').style.display='none'" style="margin-top:15px; background:#ccc; color:#333;">Fechar</button>
+            <button onclick="document.getElementById('modalSwitcher').style.display='none'"
+                style="margin-top:15px; background:#ccc; color:#333; width:100%; padding:10px; border:none; border-radius:5px; cursor:pointer;">Fechar</button>
         </div>
     </div>
 
     <script src="../js/login.js"></script>
-    <script src="../js/script.js"></script>
-
     <script>
-        const { ipcRenderer } = require('electron');
+        // Lógica de Loading
+        function showLoading() { document.getElementById("loading-screen").classList.remove("hidden"); }
+        function hideLoading() { document.getElementById("loading-screen").classList.add("hidden"); }
+        window.onload = () => { showLoading(); setTimeout(hideLoading, 1500); };
 
-        document.getElementById('minBtn').addEventListener('click', () => {
-            ipcRenderer.send('minimize-app');
-        });
+        function closeContextMenu() {
+            // Stub caso seja chamado pelo body
+        }
 
-        document.getElementById('maxBtn').addEventListener('click', () => {
-            ipcRenderer.send('maximize-app');
-        });
+        // LÓGICA DA BARRA DE TÍTULO (ELECTRON)
+        if (window.require) {
+            const { ipcRenderer } = require('electron');
 
-        document.getElementById('closeBtn').addEventListener('click', () => {
-            ipcRenderer.send('close-app');
-        });
+            document.getElementById('minBtn').addEventListener('click', () => {
+                ipcRenderer.send('minimize-app');
+            });
+
+            document.getElementById('maxBtn').addEventListener('click', () => {
+                ipcRenderer.send('maximize-app');
+            });
+
+            document.getElementById('closeBtn').addEventListener('click', () => {
+                ipcRenderer.send('close-app');
+            });
+        }
     </script>
-    
 </body>
+
 </html>
