@@ -1,6 +1,10 @@
 // Constantes
 const USERS_KEY = 'mapa_cego_users';
 
+// Tenta pegar a configuração global (vinda do config.js no HTML)
+// Se não existir (login direto), define um fallback seguro.
+const API_URL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : '';
+
 // --- CONFIGURAÇÃO DAS CONTAS DE TESTE ---
 const testAccounts = [
     // CONFERENTES - ALMOXARIFADO
@@ -31,20 +35,28 @@ async function fazerLogin() {
     const passIn = document.getElementById('loginPass').value;
     const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
+    console.log("Tentando logar em:", API_URL || 'Local/Proxy');
+
     // Tenta autenticar no servidor quando disponível
     if (window.location.protocol !== 'file:') {
         try {
-            const base = `${window.location.protocol}//${window.location.hostname}:3000`;
-            const resp = await fetch(`${base}/api/login`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+            // Usa a URL configurada no config.js ou cai no Proxy do Vite (/api)
+            const fetchUrl = API_URL ? `${API_URL}/api/login` : '/api/login';
+            
+            const resp = await fetch(fetchUrl, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: userIn, password: passIn })
             });
+
             if (resp.ok) {
                 const body = await resp.json();
                 const serverUser = body.user || { username: userIn };
                 serverUser.token = body.token;
                 loginComUsuario(serverUser);
                 return;
+            } else {
+                console.warn('Login falhou no servidor:', resp.status);
             }
         } catch (e) {
             console.warn('Falha ao conectar ao servidor, tentando login local.', e);
@@ -68,6 +80,9 @@ async function fazerLogin() {
 function loginComUsuario(user) {
     if (user.token) sessionStorage.setItem('aw_token', user.token);
     sessionStorage.setItem('loggedInUser', JSON.stringify(user));
+    
+    // REDIRECIONAMENTO CORRIGIDO PARA VITE
+    // Como o login está em /pages/login.html, o home está na mesma pasta.
     window.location.href = 'home.html'; 
 }
 
@@ -117,13 +132,13 @@ function abrirSwitcher() {
         `;
 
         item.onclick = async () => {
-                    // Tenta login no servidor
+            // Tenta login no servidor
             if (window.location.protocol !== 'file:') {
                 try {
                     const senha = defaultPass[acc.username] || '123';
-                    const base = `${window.location.protocol}//${window.location.hostname}:3000`;
+                    const fetchUrl = API_URL ? `${API_URL}/api/login` : '/api/login';
                     
-                    const resp = await fetch(`${base}/api/login`, {
+                    const resp = await fetch(fetchUrl, {
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: acc.username, password: senha })
@@ -197,8 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (window.location.protocol !== 'file:') {
                 try {
-                    const base = `${window.location.protocol}//${window.location.hostname}:3000`;
-                    await fetch(`${base}/api/account-requests`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, displayName: display, username, password, roleRequested: type, sectorRequested: sector }) });
+                    const fetchUrl = API_URL ? `${API_URL}/api/account-requests` : '/api/account-requests';
+                    await fetch(fetchUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ fullName, displayName: display, username, password, roleRequested: type, sectorRequested: sector }) 
+                    });
                 } catch (e) { console.warn('Não foi possível enviar solicitação ao servidor, salva localmente.'); }
             }
 

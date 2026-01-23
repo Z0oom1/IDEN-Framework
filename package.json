@@ -5,7 +5,9 @@
   "main": "frontend/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "server": "node server/server.js",
+    "dev": "concurrently -k \"node server/server.js\" \"vite\" \"electron .\"",
+    "build": "vite build && electron-builder"
   },
   "build": {
     "appId": "com.wilson.controladoria",
@@ -25,7 +27,9 @@
   "author": "Caio Rod",
   "license": "ISC",
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "electron": "latest",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "vite": "^7.3.1"
   }
 }

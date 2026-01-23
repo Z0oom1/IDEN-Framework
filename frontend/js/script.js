@@ -292,11 +292,7 @@ function refreshCurrentView() {
     updateBadge();
     updateAccountRequestBadge();
 
-    const badgeEl = document.getElementById('totalTrucksBadge');
-    if (badgeEl) {
-        const activeCount = patioData.filter(x => x.status !== 'SAIU').length;
-        badgeEl.textContent = activeCount;
-    }
+
 }
 
 loadDataFromServer();
@@ -1859,10 +1855,12 @@ function renderPatio() {
         if (count && c !== 'SAIU') count.textContent = '0';
     });
 
-    // Atualiza Badge
-    const badge = document.getElementById('totalTrucksBadge');
-    if (badge) badge.innerText = patioData.filter(x => x.status !== 'SAIU').length;
-
+// Atualiza Badge (Considerando apenas o dia selecionado)
+const badge = document.getElementById('totalTrucksBadge');
+if (badge) {
+    const dailyActiveCount = patioData.filter(x => x.status !== 'SAIU' && (x.chegada || '').startsWith(fd)).length;
+    badge.innerText = dailyActiveCount;
+}
     // Filtra e Ordena
     const list = patioData.filter(c => {
         if (c.status === 'SAIU') return (c.saida || '').startsWith(fd);
@@ -2345,31 +2343,105 @@ function renderRequests() {
 function resolveRequest(id, st) { const i = requests.findIndex(r => r.id === id); if (i > -1) { requests[i].status = st; if (st === 'approved' && requests[i].type === 'edit') { const m = mapData.find(x => x.id === requests[i].mapId); if (m) m.forceUnlock = true; } saveAll(); renderRequests(); } }
 function updateBadge() { const c = requests.filter(r => r.status === 'pending' && r.target === loggedUser.username).length; const b = document.getElementById('badgeNotif'); if (c > 0) { b.innerText = c; b.style.display = 'inline-block'; } else b.style.display = 'none'; }
 function checkForNotifications() {
-    // 1. Notificação de Chamado (Recebimento)
-    // Procura um caminhão liberado que ainda não teve o "OK" do recebimento
-    const call = patioData.find(c => c.status === 'LIBERADO' && !c.recebimentoNotified);
+    const modal = document.getElementById('modalNotification');
+    if (modal && modal.style.display === 'flex') return;
+
+    const todayStr = getBrazilTime().split('T')[0];
+
+    // 1. Notificação de CHEGADA NA FILA (Exclusivo para Conferentes)
+    if (typeof isConferente !== 'undefined' && isConferente) {
+        const queue = patioData.filter(c => 
+            c.status === 'FILA' && 
+            (c.chegada || '').startsWith(todayStr)
+        );
+
+        for (const truck of queue) {
+            // Cria uma chave única para chegada (diferente da liberação)
+            const arrivalKey = truck.id + '_arrival';
+            
+            // Se já notificou a chegada deste caminhão, pula
+            if (notifiedEvents.has(arrivalKey)) continue;
+
+            let shouldNotify = false;
+            
+            // Lógica de Responsabilidade por Setor
+            // Se sou da Doca (ALM), recebo notificações da Doca
+            if (truck.local === 'ALM' && userSubType === 'ALM') shouldNotify = true;
+            // Se sou do Gava, recebo do Gava
+            else if (truck.local === 'GAVA' && userSubType === 'GAVA') shouldNotify = true;
+            // Se sou de Outros (Infra, Manut, etc), recebo de Outros
+            else if (truck.local === 'OUT' && !['ALM', 'GAVA'].includes(userSubType)) shouldNotify = true;
+            // Se não tenho subtipo definido (Conferente Geral), recebo tudo
+            else if (!userSubType) shouldNotify = true;
+
+            if (shouldNotify) {
+                sendSystemNotification(
+                    "Novo Veículo na Fila",
+                    `Setor: ${truck.localSpec}\n${truck.empresa}\nPlaca: ${truck.placa}`,
+                    'patio',
+                    truck.id,
+                    { icon: '../Imgs/logo-sf.png' }
+                );
+                // Marca como notificado para não repetir
+                notifiedEvents.add(arrivalKey);
+            }
+        }
+    }
+
+    // 2. Notificação de LIBERAÇÃO (Para Recebimento/Portaria)
+    const call = patioData.find(c => 
+        c.status === 'LIBERADO' && 
+        !c.recebimentoNotified && 
+        (c.chegada || '').startsWith(todayStr)
+    );
 
     if (call && isRecebimento) {
-        // Só notifica se este ID ainda não foi processado nesta sessão
         if (!notifiedEvents.has(call.id)) {
+            // Formata a mensagem: Quem liberou + Fornecedor + Placa
+            const releaser = call.releasedBy || 'Operador';
+            const msg = `${releaser} liberou ${call.empresa} para descarga\nPlaca: ${call.placa}`;
+
             showNotificationPopup('release', call);
+            
             sendSystemNotification(
-                "Motorista Chamado!",
-                `Setor: ${call.localSpec}\nPlaca: ${call.placa}`,
+                "Veículo Liberado!",
+                msg,
                 'patio',
                 call.id,
                 { icon: '../Imgs/logo-sf.png' }
             );
-            notifiedEvents.add(call.id); // Marca como notificado para não repetir
+            
+            notifiedEvents.add(call.id);
+            return; 
         }
     }
 
-    // 2. Notificação de Divergência
-    // Procura uma divergência pendente para o usuário logado
+    // 3. Notificação de DIVERGÊNCIA
     const div = requests.find(r => r.type === 'divergence' && r.target === loggedUser.username && r.status === 'pending');
 
     if (div) {
-        // Só notifica se este ID ainda não foi processado
+        if (!notifiedEvents.has(div.id)) {
+            showNotificationPopup('divergence', div);
+            
+            sendSystemNotification(
+                "⚠️ DIVERGÊNCIA",
+                `Motivo: ${div.msg}`,
+                'mapas',
+                div.mapId,
+                { icon: '../Imgs/logo-sf.png' }
+            );
+            
+            notifiedEvents.add(div.id);
+        }
+    }
+
+    updateBadge();
+}
+
+    const div = requests.find(r => r.type === 'divergence' && r.target === loggedUser.username && r.status === 'pending');
+
+    if (div) {
+
         if (!notifiedEvents.has(div.id)) {
             showNotificationPopup('divergence', div);
             sendSystemNotification(
@@ -2384,7 +2456,7 @@ function checkForNotifications() {
     }
 
     updateBadge();
-}
+
 setInterval(checkForNotifications, 4000);
 function showNotificationPopup(type, data) {
     const p = document.getElementById('notifPopupContent');
@@ -2444,8 +2516,7 @@ function openEditTruck(id) {
     document.getElementById('editTruckId').value = id;
     document.getElementById('editTruckPlaca').value = truck.placa;
 
-    // Tenta selecionar o setor correto no dropdown
-    // Faz o caminho reverso do nome visual para o value do option
+
     const secMapReverse = { 'DOCA (ALM)': 'DOCA', 'GAVA': 'GAVA', 'MANUTENÇÃO': 'MANUTENCAO', 'INFRAESTRUTURA': 'INFRA', 'SALA DE PESAGEM': 'PESAGEM', 'LABORATÓRIO': 'LAB' };
     document.getElementById('editTruckDestino').value = secMapReverse[truck.localSpec] || 'OUT';
 
@@ -2493,8 +2564,7 @@ function saveEditTruck() {
     const truckIndex = patioData.findIndex(t => t.id === id);
 
     if (truckIndex > -1) {
-        // 2. ATUALIZAÇÃO IN-PLACE (Modifica o objeto existente, NÃO cria novo)
-        const truck = patioData[truckIndex]; // Referência direta
+        const truck = patioData[truckIndex];
 
         truck.placa = placa;
         truck.comLaudo = laudo;
@@ -2552,7 +2622,7 @@ function saveEditTruck() {
 
         // 4. Salva e Renderiza
         saveAll();
-        renderPatio(); // Isso limpa o HTML e desenha de novo baseado no array atualizado
+        renderPatio();
         document.getElementById('modalEditTruck').style.display = 'none';
 
     } else {
@@ -2603,7 +2673,7 @@ function generateAdvancedReport() {
     else if (t === 'carregamento') data = carregamentoData;
     else if (t === 'materia-prima') data = mpData;
 
-    // --- LÓGICA ESPECIAL PARA DIVERGÊNCIAS (AGRUPADA RETRÁTIL) ---
+    // --- LÓGICA ESPECIAL PARA DIVERGÊNCIAS ---
     if (t === 'divergencias') {
         filteredReportData = [];
         const maps = mapData.filter(x => x.date >= s && x.date <= e);
@@ -2656,7 +2726,7 @@ function generateAdvancedReport() {
 
                 if (m.date > aggregator[uniqueKey].date) {
                     aggregator[uniqueKey].date = m.date;
-                    aggregator[uniqueKey].mapId = m.id; // Guarda o ID do último mapa para link
+                    aggregator[uniqueKey].mapId = m.id;
                 }
             });
         });
@@ -3507,7 +3577,7 @@ function submitWeighingRequest() {
         timestamp: getBrazilTime(),
         data: {
             supplier: { name: forn, id: mwState.supId },
-            carrier: { name: forn, id: null }, // Assume transportadora = fornecedor em manual
+            carrier: { name: forn, id: null },
             driver: { name: mot, id: mwState.motId },
             plate: { number: placa, id: mwState.plateId },
             newProducts: newProducts

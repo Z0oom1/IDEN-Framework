@@ -1,35 +1,59 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
+// Verifica se estamos rodando pelo comando 'npm run dev'
+const isDev = process.env.npm_lifecycle_event === "dev";
+
+// --- CONFIGURAÇÃO DE REDE ---
+// Coloque aqui o MESMO IP que você colocou no arquivo frontend/js/config.js
+const SERVER_IP = "192.168.0.100"; // <--- ALTERE AQUI PARA O SEU IP
+const SERVER_PORT = 2006;
+const VITE_PORT = 5173;
+
 app.disableHardwareAcceleration();
 
 function createWindow() {
-    // Configuração Estética da Janela
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
-        frame: false, // Mantém o design sem borda padrão
+        frame: false,
         autoHideMenuBar: true,
-        backgroundColor: '#1a1a1a', // Ajustado para um dark mode suave enquanto carrega
+        backgroundColor: '#1a1a1a',
         icon: path.join(__dirname, 'Imgs', 'logo.png'),
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: true, // Necessário para sua arquitetura atual
+            contextIsolation: false,
+            webSecurity: false // Permite carregar recursos locais e remotos misturados
         }
     });
 
-    // [CORREÇÃO] Porta alterada para 2006 para coincidir com o server.js
-    const port = 2006;
-    const serverUrl = `http://localhost:${port}/`; 
+    if (isDev) {
+        // --- MODO DESENVOLVIMENTO (Vite + Hot Reload) ---
+        console.log(`⚡ Modo DEV: Carregando via Vite na porta ${VITE_PORT}`);
+        
+        // No modo dev, usamos o localhost do Vite
+        win.loadURL(`http://localhost:${VITE_PORT}/pages/login.html`);
+        
+        // Abre o Inspecionar Elemento para ajudar no debug
+        win.webContents.openDevTools({ mode: 'detach' });
 
-    // Tenta carregar do servidor local
-    win.loadURL(serverUrl).catch((err) => {
-        console.log(`❌ Erro ao conectar na porta ${port}. Carregando modo offline...`);
-        // Fallback para arquivo local caso o servidor não esteja rodando
-        win.loadFile(path.join(__dirname, 'pages', 'login.html'));
-    });
+    } else {
+        // --- MODO PRODUÇÃO / REDE ---
+        // Aqui está a mudança: Tentamos carregar do IP do Servidor primeiro.
+        // Isso é útil se você quiser servir a interface pelo servidor Node.
+        // Se falhar (offline), carregamos o arquivo local.
+        
+        const serverUrl = `http://${SERVER_IP}:${SERVER_PORT}/`;
+        console.log(`🚀 Tentando conectar ao servidor: ${serverUrl}`);
 
-    // --- CONTROLES DE JANELA (IPC) ---
+        win.loadURL(serverUrl).catch((err) => {
+            console.log("⚠️ Servidor não encontrado ou offline. Carregando arquivos locais.");
+            // Fallback: Carrega o arquivo físico do computador
+            win.loadFile(path.join(__dirname, 'pages', 'login.html'));
+        });
+    }
+
+    // --- SEUS CONTROLES DE JANELA (Mantidos) ---
     ipcMain.on('minimize-app', () => win.minimize());
     
     ipcMain.on('maximize-app', () => {
@@ -38,7 +62,6 @@ function createWindow() {
 
     ipcMain.on('close-app', () => win.close());
 
-    // Limpeza de listeners para evitar vazamento de memória
     win.on('closed', () => {
         ipcMain.removeAllListeners('minimize-app');
         ipcMain.removeAllListeners('maximize-app');

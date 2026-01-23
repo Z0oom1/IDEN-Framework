@@ -9,17 +9,11 @@
     <link rel="stylesheet" href="../css/login.css">
     <link rel="stylesheet" href="../css/estilo_geral.css">
     <link rel="shortcut icon" href="../Imgs/logo.png" type="image/x-icon">
+    <script src="../js/config.js"></script>
     <script>
-        // Socket.io: server ou local
-        var script = document.createElement('script');
-        if (window.location.protocol === 'file:') {
-            // Electron (local)
-            script.src = "http://localhost:3000/socket.io/socket.io.js";
-        } else {
-            // Navegador
-            script.src = "/socket.io/socket.io.js";
-        }
-        document.head.appendChild(script);
+        const socketScript = document.createElement('script');
+        socketScript.src = `${API_BASE_URL}/socket.io/socket.io.js`;
+        document.head.appendChild(socketScript);
     </script>
     <style>
         /* Ajuste: barra no topo */
@@ -129,6 +123,7 @@
     </div>
 
     <script src="../js/login.js"></script>
+    
     <script>
         // Lógica de Loading
         function showLoading() { document.getElementById("loading-screen").classList.remove("hidden"); }
