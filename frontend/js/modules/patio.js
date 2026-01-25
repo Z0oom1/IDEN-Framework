@@ -487,6 +487,11 @@ function renderPatio() {
     const filterEl = document.getElementById('patioDateFilter');
     const fd = filterEl ? filterEl.value : getBrazilTime().split('T')[0];
     
+    // Definir variáveis de usuário para uso posterior na função
+    const uRole = (loggedUser && loggedUser.role) ? loggedUser.role : '';
+    const uSector = (typeof userSector !== 'undefined') ? userSector : '';
+    const uSubType = (typeof userSubType !== 'undefined') ? userSubType : '';
+    
     console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${typeof isConferente !== 'undefined' ? (isConferente ? 'Conf' : 'Port') : '?'}`);
 
     ['ALM', 'GAVA', 'OUT', 'SAIU'].forEach(c => {
