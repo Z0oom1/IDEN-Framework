@@ -81,7 +81,7 @@ function refreshCurrentView() {
         else if (currentView === 'dashboard') { renderDashboard(); }
     }
     updateBadge();
-    updateAccountRequestBadge();
+    if (typeof updateAccountRequestBadge === 'function') updateAccountRequestBadge();
 }
 
 function logout() { sessionStorage.removeItem('loggedInUser'); window.location.href = 'login.html'; }

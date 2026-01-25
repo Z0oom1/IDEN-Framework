@@ -488,9 +488,9 @@ function renderPatio() {
     const fd = filterEl ? filterEl.value : getBrazilTime().split('T')[0];
     
     // Definir variáveis de usuário para uso posterior na função
-    const uRole = (loggedUser && loggedUser.role) ? loggedUser.role : '';
-    const uSector = (typeof userSector !== 'undefined') ? userSector : '';
-    const uSubType = (typeof userSubType !== 'undefined') ? userSubType : '';
+    const uRole = (loggedUser && loggedUser.role) ? String(loggedUser.role) : '';
+    const uSector = (typeof userSector !== 'undefined' && userSector) ? String(userSector) : '';
+    const uSubType = (typeof userSubType !== 'undefined' && userSubType) ? String(userSubType) : '';
     
     console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${typeof isConferente !== 'undefined' ? (isConferente ? 'Conf' : 'Port') : '?'}`);
     
@@ -583,7 +583,7 @@ function renderPatio() {
              // Verifica se o subtipo do conferente está na descrição do local (ex: 'ALM' em 'DOCA (ALM)')
              // Ou caso especial para 'OUT'
              if (subTypeUpper === 'OUT' && c.local === 'OUT') canAction = true;
-             else if (c.localSpec.toUpperCase().includes(subTypeUpper)) canAction = true;
+             else if ((c.localSpec || '').toUpperCase().includes(subTypeUpper)) canAction = true;
         }
         
         if (!isSaiu && canAction) {
@@ -606,7 +606,7 @@ function renderPatio() {
                         <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${weighBadge}</div>
                         <div style="margin: 4px 0;">${laudoBadge}</div>
                         <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
-                        <div class="sector-tag">${c.localSpec}</div>
+                        <div class="sector-tag">${c.localSpec || 'NÃO DEFINIDO'}</div>
                     </div>
                 </div>
             </div>
