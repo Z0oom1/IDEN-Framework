@@ -88,12 +88,35 @@ function initRoleBasedUI() {
         if (ftg) ftg.checked = true;
     }
 
-    // A visibilidade dos menus agora é controlada por injectCustomMenus() em custom-modules.js
-    if (typeof injectCustomMenus === 'function') {
-        injectCustomMenus();
+    if (typeof isConferente !== 'undefined' && isConferente) {
+        const fab = document.getElementById('fabAddTruck'); if (fab) fab.style.display = 'none';
+        const mc = document.getElementById('menuCarregamento'); if (mc) mc.style.display = 'none';
+    } else {
+        const fab = document.getElementById('fabAddTruck'); if (fab) fab.style.display = 'flex';
+        const mc = document.getElementById('menuCarregamento'); if (mc) mc.style.display = 'flex';
     }
 
-    // Mantém lógica de colunas do pátio para conferentes
+    const mmp = document.getElementById('menuMateriaPrima');
+    if (typeof isRecebimento !== 'undefined') {
+        if (mmp) mmp.style.display = isRecebimento ? 'flex' : 'none';
+    }
+
+    const menuDash = document.getElementById('menuDashboard');
+    const isEnc = typeof isEncarregado !== 'undefined' ? isEncarregado : false;
+    const isAdm = typeof isAdmin !== 'undefined' ? isAdmin : false;
+    const canViewDash = isEnc || isAdm;
+
+    if (menuDash) {
+        menuDash.style.display = canViewDash ? 'flex' : 'none';
+    }
+
+    // Controle de acesso ao menu de cadastros - Almoxarifado não tem acesso
+    const menuCadastros = document.getElementById('menuCadastros');
+    const isAlmoxarifado = typeof userSubType !== 'undefined' && userSubType === 'ALM';
+    if (menuCadastros) {
+        menuCadastros.style.display = isAlmoxarifado ? 'none' : 'flex';
+    }
+
     if (typeof isConferente !== 'undefined' && isConferente && typeof userSubType !== 'undefined' && userSubType) {
         const cA = document.getElementById('col-ALM');
         const cG = document.getElementById('col-GAVA');
@@ -120,6 +143,8 @@ function initRoleBasedUI() {
         const el = document.getElementById(id);
         if (el) el.value = getBrazilTime().split('T')[0];
     });
+
+    setInterval(() => { const el = document.getElementById('serverTime'); if (el) el.textContent = new Date().toLocaleTimeString(); }, 1000);
 }
 
 function toggleDarkMode() { const c = document.getElementById('darkModeToggle').checked; if (c) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode'); localStorage.setItem('aw_dark_mode', c); }

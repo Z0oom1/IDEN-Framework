@@ -9,8 +9,6 @@ let mpData = [];
 let carregamentoData = [];
 let requests = [];
 let usersData = [];
-let customModulesData = [];
-let userPermissionsData = {};
 
 async function checkServerStatus() {
     try {
@@ -52,8 +50,6 @@ async function loadDataFromServer() {
         carregamentoData = data.aw_carregamento || [];
         requests = data.aw_requests || [];
         usersData = data.mapa_cego_users || [];
-        customModulesData = data.custom_modules || [];
-        userPermissionsData = data.user_permissions || {};
         suppliersData = data.aw_suppliers || [];
         carriersData = data.aw_carriers || [];
         driversData = data.aw_drivers || [];
@@ -65,8 +61,6 @@ async function loadDataFromServer() {
         restoreFromLocal();
     }
     refreshCurrentView();
-    // Dispara evento para módulos que dependem de dados carregados
-    window.dispatchEvent(new CustomEvent('aw_data_loaded'));
 }
 
 // Alias para compatibilidade
@@ -91,8 +85,6 @@ function saveAll() {
     saveToServer('aw_carregamento', carregamentoData);
     saveToServer('aw_requests', requests);
     saveToServer('mapa_cego_users', usersData);
-    saveToServer('custom_modules', customModulesData);
-    saveToServer('user_permissions', userPermissionsData);
     saveToServer('aw_suppliers', suppliersData);
     saveToServer('aw_carriers', carriersData);
     saveToServer('aw_drivers', driversData);
@@ -116,8 +108,6 @@ function saveToLocalOnly() {
         localStorage.setItem('aw_carregamento', JSON.stringify(carregamentoData));
         localStorage.setItem('aw_requests', JSON.stringify(requests));
         localStorage.setItem('mapa_cego_users', JSON.stringify(usersData));
-        localStorage.setItem('custom_modules', JSON.stringify(customModulesData));
-        localStorage.setItem('user_permissions', JSON.stringify(userPermissionsData));
         localStorage.setItem('aw_suppliers', JSON.stringify(suppliersData));
         localStorage.setItem('aw_carriers', JSON.stringify(carriersData));
         localStorage.setItem('aw_drivers', JSON.stringify(driversData));
@@ -133,8 +123,6 @@ function restoreFromLocal() {
     carregamentoData = JSON.parse(localStorage.getItem('aw_carregamento') || '[]');
     requests = JSON.parse(localStorage.getItem('aw_requests') || '[]');
     usersData = JSON.parse(localStorage.getItem('mapa_cego_users') || '[]');
-    customModulesData = JSON.parse(localStorage.getItem('custom_modules') || '[]');
-    userPermissionsData = JSON.parse(localStorage.getItem('user_permissions') || '{}');
     suppliersData = JSON.parse(localStorage.getItem('aw_suppliers') || '[]');
     carriersData = JSON.parse(localStorage.getItem('aw_carriers') || '[]');
     driversData = JSON.parse(localStorage.getItem('aw_drivers') || '[]');

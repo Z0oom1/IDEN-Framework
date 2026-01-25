@@ -84,22 +84,10 @@ function renderUserList() {
     tbody.innerHTML = '';
     usersData.forEach(u => {
         const isMe = u.username === loggedUser.username;
-        const removeBtn = isMe ? '<span style="color:#999; font-size:0.8rem;">(Você)</span>' : `<button class="btn btn-edit btn-small" onclick="removeUser('${u.username}')" style="color:red; border-color:red; margin-left:5px;">Remover</button>`;
-        const editPermsBtn = isAdmin ? `<button class="btn btn-edit btn-small" onclick="openPermissionEditor('${u.username}')" title="Permissões" style="margin-right:5px; background:var(--primary); color:white; border:none;"><i class="fas fa-user-shield"></i></button>` : '';
-        
+        const btn = isMe ? '<span style="color:#999; font-size:0.8rem;">(Você)</span>' : `<button class="btn btn-edit btn-small" onclick="removeUser('${u.username}')" style="color:red; border-color:red;">Remover</button>`;
         let secDisplay = u.sector; 
         if (u.subType) secDisplay += ` (${u.subType})`;
-        
-        tbody.innerHTML += `
-            <tr>
-                <td><b>${u.username}</b></td>
-                <td>${u.role}</td>
-                <td>${secDisplay}</td>
-                <td style="display:flex; align-items:center;">
-                    ${editPermsBtn}
-                    ${removeBtn}
-                </td>
-            </tr>`;
+        tbody.innerHTML += `<tr><td><b>${u.username}</b></td><td>${u.role}</td><td>${secDisplay}</td><td>${btn}</td></tr>`;
     });
 }
 
