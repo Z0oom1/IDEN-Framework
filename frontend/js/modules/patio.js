@@ -519,14 +519,17 @@ function renderPatio() {
         
         if (!dateMatch) return false;
         
-        // Regra de permissão estrita por setor:
-        // 1. Admin e Portaria veem tudo (Portaria precisa ver tudo para dar entrada/saída)
+        // Regra de permissão por setor:
+        // 1. Admin, Portaria e Recebimento veem tudo
         if (typeof isAdmin !== 'undefined' && isAdmin) return true;
         if (uRole.toUpperCase() === 'PORTARIA') return true;
+        if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
         
-        // 2. Se o usuário tem um setor definido (uSector ou uSubType), isolamento estrito
-        const userTargetSector = (uSubType || uSector).toUpperCase();
-        if (userTargetSector) {
+        // 2. Conferentes veem apenas seus setores (Isolamento)
+        if (typeof isConferente !== 'undefined' && isConferente) {
+            const userTargetSector = (uSubType || uSector).toUpperCase();
+            if (!userTargetSector) return true; // Se não tem setor definido, vê tudo (fallback)
+
             const truckLocal = (c.local || '').toUpperCase();
             const truckLocalSpec = (c.localSpec || '').toUpperCase();
 
@@ -541,7 +544,6 @@ function renderPatio() {
             }
 
             // Outros setores (INFRA, LAB, MANUTENCAO, etc)
-            // O isolamento é estrito: o nome do setor deve estar no local ou localSpec
             return truckLocal === userTargetSector || truckLocalSpec.includes(userTargetSector);
         }
 

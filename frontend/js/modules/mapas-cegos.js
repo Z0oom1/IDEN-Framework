@@ -30,12 +30,16 @@ function renderMapList() {
         const uSector = (typeof userSector !== 'undefined' && userSector) ? String(userSector).toUpperCase() : '';
         const uSubType = (typeof userSubType !== 'undefined' && userSubType) ? String(userSubType).toUpperCase() : '';
 
-        // Admin e Portaria veem tudo
+        // Admin, Portaria e Recebimento veem tudo
         if (typeof isAdmin !== 'undefined' && isAdmin) return true;
         if (uRole === 'PORTARIA') return true;
+        if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
 
-        const userTargetSector = uSubType || uSector;
-        if (userTargetSector) {
+        // Conferentes veem apenas seus setores (Isolamento)
+        if (typeof isConferente !== 'undefined' && isConferente) {
+            const userTargetSector = uSubType || uSector;
+            if (!userTargetSector) return true;
+
             const mapSectorUpper = (m.setor || '').toUpperCase();
             
             // Caso especial Almoxarifado
@@ -43,7 +47,7 @@ function renderMapList() {
                 return mapSectorUpper.includes('ALM') || mapSectorUpper.includes('DOCA');
             }
 
-            // Isolamento estrito
+            // Isolamento por setor
             return mapSectorUpper.includes(userTargetSector);
         }
 
