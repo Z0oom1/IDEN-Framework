@@ -170,6 +170,11 @@ function fecharRegistro() { document.getElementById('modalRegistro').style.displ
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    // Oculta window-controls se não for Electron
+    const isElectron = /electron/i.test(navigator.userAgent);
+    const windowControls = document.querySelectorAll('.window-controls');
+    windowControls.forEach(c => c.style.display = isElectron ? 'flex' : 'none');
+
     let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
     
     // Usuários padrão iniciais

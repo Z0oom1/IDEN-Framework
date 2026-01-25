@@ -86,6 +86,22 @@ function refreshCurrentView() {
 
 function logout() { sessionStorage.removeItem('loggedInUser'); window.location.href = 'login.html'; }
 
+function checkElectronEnvironment() {
+    const isElectron = /electron/i.test(navigator.userAgent);
+    const windowControls = document.querySelectorAll('.window-controls');
+    
+    windowControls.forEach(control => {
+        if (isElectron) {
+            control.style.display = 'flex';
+        } else {
+            control.style.display = 'none';
+        }
+    });
+}
+
+// Inicializa a visibilidade dos controles ao carregar o módulo
+document.addEventListener('DOMContentLoaded', checkElectronEnvironment);
+
 function closeContextMenu() { document.querySelectorAll('.context-menu').forEach(x => x.style.display = 'none'); }
 
 window.onclick = function (event) {

@@ -78,7 +78,7 @@ body {
 }
 
 .window-controls {
-    display: flex;
+    display: none; /* Oculto por padrão, exibido via JS apenas no Electron */
     gap: 8px;
     -webkit-app-region: no-drag;
 }
