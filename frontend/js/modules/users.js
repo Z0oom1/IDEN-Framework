@@ -171,10 +171,35 @@ function renderAdminArea() {
         document.getElementById('adminEmptyState').style.display = 'none';
         document.getElementById('adminPermissionEditor').style.display = 'block';
         document.getElementById('adminCurrentProfileName').innerText = currentEditingProfile.toUpperCase();
+        
+        // Mostrar configuração de setor se for perfil Funcionário
+        const sectorConfig = document.getElementById('adminSectorConfig');
+        if (currentEditingProfile === 'Funcionario') {
+            sectorConfig.style.display = 'block';
+            const perms = systemPermissions[currentEditingProfile] || {};
+            document.getElementById('adminMainSector').value = perms.mainSector || 'Conferencia';
+            document.getElementById('adminSubSector').value = perms.subSector || 'Infraestrutura';
+            updateSubSectorOptions();
+        } else {
+            sectorConfig.style.display = 'none';
+        }
+        
         renderModulePermissions();
     } else {
         document.getElementById('adminEmptyState').style.display = 'block';
         document.getElementById('adminPermissionEditor').style.display = 'none';
+    }
+}
+
+function updateSubSectorOptions() {
+    const main = document.getElementById('adminMainSector').value;
+    const subContainer = document.getElementById('adminSubSectorContainer');
+    if (main === 'Recebimento') {
+        subContainer.style.opacity = '0.5';
+        subContainer.style.pointerEvents = 'none';
+    } else {
+        subContainer.style.opacity = '1';
+        subContainer.style.pointerEvents = 'auto';
     }
 }
 
@@ -218,6 +243,13 @@ function updateTempPerm(modId, action, value) {
 }
 
 function savePermissions() {
+    // Salvar configurações de setor se for Funcionário
+    if (currentEditingProfile === 'Funcionario') {
+        if (!systemPermissions[currentEditingProfile]) systemPermissions[currentEditingProfile] = {};
+        systemPermissions[currentEditingProfile].mainSector = document.getElementById('adminMainSector').value;
+        systemPermissions[currentEditingProfile].subSector = document.getElementById('adminSubSector').value;
+    }
+
     localStorage.setItem('system_permissions', JSON.stringify(systemPermissions));
     
     // Log de alteração

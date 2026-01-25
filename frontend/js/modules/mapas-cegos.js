@@ -22,8 +22,40 @@ function renderMapList() {
     const l = document.getElementById('mapList');
     l.innerHTML = '';
 
+    // Obter permissões e setor do usuário logado
+    const logged = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser : { role: 'Portaria', sector: 'Recebimento' };
+    const uRole = (logged.role || 'Portaria').toLowerCase();
+    const perms = systemPermissions[logged.role] || {};
+    const mainSector = perms.mainSector || logged.sector || '';
+    const subSector = perms.subSector || logged.subType || '';
+    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria';
+    const isRecebimento = mainSector === 'Recebimento' || uRole.includes('encarregado');
+
     const filteredMaps = mapData.filter(m => {
+        // 1. Filtro de Data
         if (m.date !== fd) return false;
+
+        // 2. Filtro de Hierarquia/Setor (Apenas para Funcionários)
+        if (logged.role === 'Funcionario') {
+            if (isRecebimento) return true; // Recebimento vê tudo
+            
+            if (!subSector) return false; // Conferente sem subtipo não vê nada
+            
+            const subUpper = subSector.toUpperCase();
+            const mapSectorUpper = (m.setor || '').toUpperCase();
+            
+            // Verificação genérica por nome de setor
+            if (mapSectorUpper.includes(subUpper)) return true;
+            
+            // Especial para Almoxarifado (ALM)
+            if ((subUpper === 'ALMORARIFADO' || subUpper === 'ALM') && mapSectorUpper.includes('ALM')) return true;
+
+            return false;
+        }
+
+        // 3. Admin e Recebimento veem tudo por padrão
+        if (isAdmin || isRecebimento) return true;
+
         return true;
     }).slice().reverse();
 

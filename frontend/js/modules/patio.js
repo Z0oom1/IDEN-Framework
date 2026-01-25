@@ -491,11 +491,14 @@ function renderPatio() {
     const logged = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser : { role: 'Portaria', sector: 'Recebimento' };
     
     const uRole = (logged.role || 'Portaria').toLowerCase();
-    const uSector = (logged.sector || '').toLowerCase();
-    const uSubType = (logged.subType || '').toUpperCase();
+    
+    // Obter permissões granulares e hierarquia do sistema
+    const perms = systemPermissions[logged.role] || {};
+    const mainSector = perms.mainSector || logged.sector || '';
+    const subSector = perms.subSector || logged.subType || '';
 
-    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria' || uRole === 'user'; // 'user' genérico vê tudo por padrão se não for conferente
-    const isRecebimento = uSector === 'recebimento' || uRole.includes('encarregado');
+    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria';
+    const isRecebimento = mainSector === 'Recebimento' || uRole.includes('encarregado');
     
     console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${uRole}, Sector=${uSector}`);
 
@@ -516,17 +519,24 @@ function renderPatio() {
         if (isAdmin || isRecebimento) return true;
         
         // 2. Conferentes veem apenas seus setores
-        if (uSector === 'conferente') {
-            if (!uSubType) return false; // Conferente sem subtipo não vê nada
+        if (mainSector === 'Conferencia' || logged.role === 'Funcionario') {
+            if (isRecebimento) return true; // Se o funcionário for do recebimento, vê tudo
+            
+            if (!subSector) return false; // Conferente sem subtipo não vê nada
+            
+            const subUpper = subSector.toUpperCase();
+            const localSpecUpper = (c.localSpec || '').toUpperCase();
             
             // ALM vê DOCA (ALM)
-            if (uSubType === 'ALM' && (c.localSpec.includes('ALM') || c.local === 'ALM')) return true;
-            // GAVA vê GAVA
-            if (uSubType === 'GAVA' && (c.localSpec.includes('GAVA') || c.local === 'GAVA')) return true;
-            // Outros conferentes veem seus setores específicos
-            if (c.localSpec.toUpperCase().includes(uSubType)) return true;
-            // Conferentes 'OUT' veem OUTROS
-            if (uSubType === 'OUT' && c.local === 'OUT') return true;
+            if (subUpper === 'ALMORARIFADO' || subUpper === 'ALM') {
+                if (localSpecUpper.includes('ALM') || c.local === 'ALM') return true;
+            }
+            
+            // Verificação genérica por nome de setor
+            if (localSpecUpper.includes(subUpper)) return true;
+            
+            // Fallback para 'OUTROS'
+            if (subUpper === 'OUTROS' && c.local === 'OUT') return true;
             
             return false;
         }

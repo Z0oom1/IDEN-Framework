@@ -116,18 +116,45 @@ function updateMenuVisibility() {
     const mAdmin = document.getElementById('menuAdmin');
     if (mAdmin) mAdmin.style.display = isAdmin ? 'flex' : 'none';
 
+    // Obter hierarquia do funcionário
+    const perms = systemPermissions[loggedUser.role] || {};
+    const mainSector = perms.mainSector || loggedUser.sector || '';
+    const isUserRecebimento = mainSector === 'Recebimento';
+
     // Aplicar restrições de permissões granulares nos menus para usuários não-admin
     if (!isAdmin) {
         APP_MODULES.forEach(mod => {
             const menuEl = document.querySelector(`.menu-item[onclick*="'${mod.id}'"]`);
             if (menuEl) {
+                // 1. Regra de Dashboard: Apenas Encarregados e ADM
+                if (mod.id === 'dashboard' && !loggedUser.role.toLowerCase().includes('encarregado')) {
+                    menuEl.style.display = 'none';
+                    return;
+                }
+
+                // 2. Regra de Permissões Granulares (ADM configurou)
                 if (!checkPermission(mod.id, 'view')) {
                     menuEl.style.display = 'none';
+                    return;
+                }
+
+                // 3. Regras de Hierarquia (Recebimento vs Conferência)
+                if (loggedUser.role === 'Funcionario') {
+                    if (isUserRecebimento) {
+                        // Recebimento vê tudo exceto Dashboard (já tratado acima)
+                        menuEl.style.display = 'flex';
+                    } else {
+                        // Conferência vê: Fila, Mapas, Relatórios, Produtos, Notificações, Perfil
+                        const allowedForConf = ['patio', 'mapas', 'relatorios', 'produtos', 'notificacoes', 'perfil'];
+                        if (allowedForConf.includes(mod.id)) {
+                            menuEl.style.display = 'flex';
+                        } else {
+                            menuEl.style.display = 'none';
+                        }
+                    }
                 } else {
-                    // Respeitar regras legadas de visibilidade (ex: pátio só para recebimento)
+                    // Respeitar regras legadas de visibilidade para outros perfis
                     if (mod.id === 'patio' && !isRecebimento) {
-                        menuEl.style.display = 'none';
-                    } else if (mod.id === 'cadastros' && typeof userSubType !== 'undefined' && userSubType === 'ALM') {
                         menuEl.style.display = 'none';
                     } else {
                         menuEl.style.display = 'flex';

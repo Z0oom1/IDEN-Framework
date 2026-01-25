@@ -529,6 +529,34 @@
                                 <button class="btn btn-save btn-small" onclick="savePermissions()"><i class="fas fa-save"></i> Salvar Permissões</button>
                             </div>
                             
+                            <div id="adminSectorConfig" style="margin-bottom:20px; padding:15px; background:var(--bg-card); border:1px solid #e2e8f0; border-radius:8px; display:none;">
+                                <h5 style="margin-top:0; margin-bottom:10px;"><i class="fas fa-sitemap"></i> Hierarquia e Setorização</h5>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                                    <div>
+                                        <label style="font-size:0.8rem; font-weight:bold;">Área Principal</label>
+                                        <select id="adminMainSector" class="form-input-styled" onchange="updateSubSectorOptions()">
+                                            <option value="Recebimento">Recebimento (Acesso Global)</option>
+                                            <option value="Conferencia">Conferência (Acesso Restrito)</option>
+                                        </select>
+                                    </div>
+                                    <div id="adminSubSectorContainer">
+                                        <label style="font-size:0.8rem; font-weight:bold;">Sub-Setor / Especialidade</label>
+                                        <select id="adminSubSector" class="form-input-styled">
+                                            <option value="Infraestrutura">Infraestrutura</option>
+                                            <option value="Manutencao">Manutenção</option>
+                                            <option value="Laboratorio">Laboratório</option>
+                                            <option value="Almoxarifado">Almoxarifado</option>
+                                            <option value="Producao">Produção</option>
+                                            <option value="Outros">Outros</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <p style="font-size:0.75rem; color:#64748b; margin-top:10px; line-height:1.4;">
+                                    * <b>Recebimento:</b> Vê tudo, exceto Dashboard.<br>
+                                    * <b>Conferência:</b> Vê apenas dados do seu próprio sub-setor.
+                                </p>
+                            </div>
+
                             <div id="adminModulesContainer" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                                 <!-- Módulos e permissões renderizados via JS -->
                             </div>
