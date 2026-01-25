@@ -493,6 +493,12 @@ function renderPatio() {
     const uSubType = (typeof userSubType !== 'undefined') ? userSubType : '';
     
     console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${typeof isConferente !== 'undefined' ? (isConferente ? 'Conf' : 'Port') : '?'}`);
+    
+    // Log de depuração para encontrar caminhões "sumidos"
+    if (patioData.length > 0) {
+        const missingTrucks = patioData.filter(t => t.status === 'FILA');
+        console.log("Caminhões em FILA no banco:", missingTrucks.map(t => `${t.placa} (${t.chegada})`));
+    }
 
     ['ALM', 'GAVA', 'OUT', 'SAIU'].forEach(c => {
         const list = document.getElementById('list-' + c);
@@ -502,7 +508,14 @@ function renderPatio() {
     });
 
     const list = patioData.filter(c => {
-        const dateMatch = c.status === 'SAIU' ? (c.saida || '').startsWith(fd) : (c.dateRef === fd || (c.chegada || '').split('T')[0] === fd);
+        // Lógica de data mais robusta: tenta dateRef, depois chegada, depois o próprio objeto se tiver data
+        const truckDate = (c.dateRef || (c.chegada || '').split('T')[0]);
+        const isToday = truckDate === fd;
+        const isStillInYard = ['FILA', 'LIBERADO', 'ENTROU'].includes(c.status);
+        
+        // Se o caminhão ainda está no pátio, ele deve aparecer independente da data de chegada (para não "sumir" na virada do dia)
+        // Se já saiu, respeita o filtro de data da saída
+        const dateMatch = isStillInYard ? true : (c.status === 'SAIU' ? (c.saida || '').startsWith(fd) : isToday);
         
         if (!dateMatch) return false;
         
