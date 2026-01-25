@@ -79,9 +79,15 @@ function saveCarregamento() {
     
     if (!mot || !cav) return alert("Motorista e Cavalo são obrigatórios.");
 
-    // Sistema de Requisições para Carregamento Manual
-    const motExists = driversData.some(d => d.nome.toUpperCase() === mot.toUpperCase());
-    const plateExists = platesData.some(p => p.placa.toUpperCase() === cav.toUpperCase());
+    // Sistema de Requisições para Carregamento Manual - VERSÃO COMPLEXA
+    const motUpper = mot.toUpperCase();
+    const cavUpper = cav.toUpperCase();
+    
+    const driver = driversData.find(d => d.nome.toUpperCase() === motUpper);
+    const plate = platesData.find(p => (p.placa || p.numero || '').toUpperCase() === cavUpper);
+    
+    const motExists = !!driver;
+    const plateExists = !!plate;
 
     if (!motExists || !plateExists) {
         const missing = [];
@@ -89,16 +95,35 @@ function saveCarregamento() {
         if (!plateExists) missing.push(`Placa (Cavalo): ${cav}`);
         
         if (confirm(`As seguintes informações não estão cadastradas:\n\n${missing.join('\n')}\n\nDeseja enviar uma requisição para o administrador cadastrar?`)) {
+            const reqId = 'REQ_CARR_' + Date.now();
+            
+            // Criar requisição complexa igual à fila de caminhões
             requests.push({
-                id: Date.now(),
-                user: loggedUser.username,
-                target: 'Admin',
-                type: 'CADASTRO',
-                msg: `Solicitação de cadastro manual no Carregamento:\n${missing.join('\n')}`,
-                status: 'pending',
-                date: getBrazilTime()
+                id: reqId,
+                type: 'complex_entry',
+                status: 'PENDENTE',
+                user: (typeof loggedUser !== 'undefined' ? loggedUser.username : 'Operador'),
+                timestamp: getBrazilTime(),
+                source: 'CARREGAMENTO_MANUAL',
+                data: {
+                    supplier: { name: '', id: null },
+                    carrier: { name: '', id: null },
+                    driver: { name: mot, id: driver ? driver.id : null },
+                    plate: { number: cav, id: plate ? plate.id : null },
+                    newProducts: [],
+                    additionalInfo: {
+                        carretas: arr,
+                        tipo: 'CARREGAMENTO'
+                    }
+                }
             });
-            alert("Requisição enviada ao administrador.");
+            
+            // Enviar notificação
+            if (typeof sendSystemNotification === 'function') {
+                sendSystemNotification("Nova Requisição", "Carregamento manual pendente de aprovação.", "cadastros");
+            }
+            
+            alert("Requisição complexa enviada ao administrador.");
         }
     }
 

@@ -242,3 +242,252 @@ function saveNoteMP() {
     } 
     document.getElementById('modalNoteMP').style.display = 'none'; 
 }
+
+// ===================================================================================
+//  NOVO SISTEMA DE PESAGEM MANUAL COM REQUISIÇÕES COMPLEXAS
+// ===================================================================================
+
+let weighingState = {
+    selectedSupplierId: null,
+    selectedDriverId: null,
+    selectedPlateId: null,
+    selectedProductId: null
+};
+
+function openManualWeighingModal() {
+    // Reset state
+    weighingState = {
+        selectedSupplierId: null,
+        selectedDriverId: null,
+        selectedPlateId: null,
+        selectedProductId: null
+    };
+
+    // Clear inputs
+    ['mwForn', 'mwProd', 'mwPlaca', 'mwMot', 'mwNF', 'mwPesoNF'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = '';
+            el.classList.remove('input-warning');
+        }
+    });
+
+    // Hide warning and show save button
+    document.getElementById('mwWarningBox').style.display = 'none';
+    document.getElementById('btnSaveMW').style.display = 'inline-block';
+    document.getElementById('btnReqMW').style.display = 'none';
+
+    // Populate datalists
+    populateDatalist('dlForn', suppliersData);
+    populateDatalist('dlMot', driversData);
+    populateDatalist('dlPlaca', platesData, 'numero');
+    populateDatalist('prodListSuggestions', productsData);
+
+    document.getElementById('modalManualWeighing').style.display = 'flex';
+}
+
+function filterWeighingChain(step) {
+    const inForn = document.getElementById('mwForn');
+    const inProd = document.getElementById('mwProd');
+    const inPlaca = document.getElementById('mwPlaca');
+    const inMot = document.getElementById('mwMot');
+
+    const findId = (arr, val, field = 'nome') => {
+        if (!val) return null;
+        const vUpper = val.toUpperCase().trim();
+        return arr.find(x => {
+            const fieldVal = x[field] || x.nome || x.numero;
+            return fieldVal && fieldVal.toUpperCase() === vUpper;
+        })?.id || null;
+    };
+
+    if (step === 'fornecedor') {
+        inForn.value = Validators.cleanName(inForn.value);
+        weighingState.selectedSupplierId = findId(suppliersData, inForn.value);
+        checkFieldStatus('mwForn', weighingState.selectedSupplierId);
+    }
+
+    if (step === 'produto') {
+        inProd.value = inProd.value.toUpperCase().trim();
+        weighingState.selectedProductId = findId(productsData, inProd.value);
+        checkFieldStatus('mwProd', weighingState.selectedProductId);
+    }
+
+    if (step === 'placa') {
+        inPlaca.value = Validators.validatePlate(inPlaca.value);
+        const raw = inPlaca.value.replace(/[^A-Z0-9]/g, '');
+        weighingState.selectedPlateId = platesData.find(p => p.numero.replace('-', '') === raw)?.id || null;
+        checkFieldStatus('mwPlaca', weighingState.selectedPlateId);
+
+        // Auto-populate driver if plate is found
+        if (weighingState.selectedPlateId) {
+            const plate = platesData.find(p => p.id === weighingState.selectedPlateId);
+            if (plate && plate.driverId) {
+                const driver = driversData.find(d => d.id === plate.driverId);
+                if (driver) {
+                    inMot.value = driver.nome;
+                    weighingState.selectedDriverId = driver.id;
+                    checkFieldStatus('mwMot', weighingState.selectedDriverId);
+                }
+            }
+        }
+    }
+
+    if (step === 'motorista') {
+        inMot.value = Validators.cleanName(inMot.value);
+        weighingState.selectedDriverId = findId(driversData, inMot.value);
+        checkFieldStatus('mwMot', weighingState.selectedDriverId);
+
+        // Filter plates by driver
+        if (weighingState.selectedDriverId) {
+            const validPlates = platesData.filter(p => p.driverId === weighingState.selectedDriverId);
+            populateDatalist('dlPlaca', validPlates, 'numero');
+        } else {
+            populateDatalist('dlPlaca', platesData, 'numero');
+        }
+    }
+
+    evaluateWeighingRequestNecessity();
+}
+
+function evaluateWeighingRequestNecessity() {
+    const inForn = document.getElementById('mwForn');
+    const inProd = document.getElementById('mwProd');
+    const inPlaca = document.getElementById('mwPlaca');
+    const inMot = document.getElementById('mwMot');
+
+    const isNewForn = inForn.value && !weighingState.selectedSupplierId;
+    const isNewProd = inProd.value && !weighingState.selectedProductId;
+    const isNewPlaca = inPlaca.value && !weighingState.selectedPlateId;
+    const isNewMot = inMot.value && !weighingState.selectedDriverId;
+
+    const btnSave = document.getElementById('btnSaveMW');
+    const btnReq = document.getElementById('btnReqMW');
+    const warnBox = document.getElementById('mwWarningBox');
+
+    if (isNewForn || isNewProd || isNewPlaca || isNewMot) {
+        if (warnBox) warnBox.style.display = 'block';
+        if (btnSave) btnSave.style.display = 'none';
+        if (btnReq) btnReq.style.display = 'inline-block';
+    } else {
+        if (warnBox) warnBox.style.display = 'none';
+        if (btnSave) btnSave.style.display = 'inline-block';
+        if (btnReq) btnReq.style.display = 'none';
+    }
+}
+
+function saveManualWeighing() {
+    const fornVal = document.getElementById('mwForn').value.toUpperCase().trim();
+    const prodVal = document.getElementById('mwProd').value.toUpperCase().trim();
+    const placaVal = document.getElementById('mwPlaca').value.toUpperCase().trim();
+    const motVal = document.getElementById('mwMot').value.toUpperCase().trim();
+    const nfVal = document.getElementById('mwNF').value.trim();
+    const pesoNFVal = parseFloat(document.getElementById('mwPesoNF').value) || 0;
+
+    if (!fornVal || !prodVal || !placaVal) {
+        return alert("Fornecedor, Produto e Placa são obrigatórios.");
+    }
+
+    const id = 'MW_' + Date.now();
+    const d = document.getElementById('mpDateFilter').value || getBrazilTime().split('T')[0];
+
+    mpData.push({
+        id: id,
+        date: d,
+        produto: prodVal,
+        empresa: fornVal,
+        placa: placaVal,
+        local: 'PESAGEM MANUAL',
+        chegada: getBrazilTime(),
+        entrada: getBrazilTime(),
+        tara: 0,
+        bruto: 0,
+        liq: 0,
+        pesoNF: pesoNFVal,
+        difKg: 0 - pesoNFVal,
+        difPerc: pesoNFVal ? (((0 - pesoNFVal) / pesoNFVal) * 100).toFixed(2) : 0,
+        nf: nfVal || 'S/N',
+        notes: motVal ? `Motorista: ${motVal}` : '',
+        isManual: true
+    });
+
+    saveAll();
+    renderMateriaPrima();
+    document.getElementById('modalManualWeighing').style.display = 'none';
+    alert("Pesagem manual registrada com sucesso!");
+}
+
+function submitWeighingRequest() {
+    const fornVal = document.getElementById('mwForn').value.toUpperCase().trim();
+    const prodVal = document.getElementById('mwProd').value.toUpperCase().trim();
+    const placaVal = document.getElementById('mwPlaca').value.toUpperCase().trim();
+    const motVal = document.getElementById('mwMot').value.toUpperCase().trim();
+    const nfVal = document.getElementById('mwNF').value.trim();
+    const pesoNFVal = parseFloat(document.getElementById('mwPesoNF').value) || 0;
+
+    if (!fornVal || !prodVal || !placaVal) {
+        return alert("Fornecedor, Produto e Placa são obrigatórios.");
+    }
+
+    const reqId = 'REQ_WEIGH_' + Date.now();
+    const newProducts = [];
+    
+    if (prodVal && !weighingState.selectedProductId) {
+        newProducts.push(prodVal);
+    }
+
+    // Create complex request
+    requests.push({
+        id: reqId,
+        type: 'complex_entry',
+        status: 'PENDENTE',
+        user: (typeof loggedUser !== 'undefined' ? loggedUser.username : 'Operador'),
+        timestamp: getBrazilTime(),
+        source: 'PESAGEM_MANUAL',
+        data: {
+            supplier: { name: fornVal, id: weighingState.selectedSupplierId },
+            carrier: { name: '', id: null },
+            driver: { name: motVal, id: weighingState.selectedDriverId },
+            plate: { number: placaVal, id: weighingState.selectedPlateId },
+            newProducts: newProducts,
+            additionalInfo: {
+                nf: nfVal,
+                pesoNF: pesoNFVal
+            }
+        }
+    });
+
+    // Send notification
+    if (typeof sendSystemNotification === 'function') {
+        sendSystemNotification("Nova Requisição", "Pesagem manual pendente de aprovação.", "cadastros");
+    }
+
+    // Still create the weighing record
+    const id = 'MW_' + Date.now();
+    const d = document.getElementById('mpDateFilter').value || getBrazilTime().split('T')[0];
+
+    mpData.push({
+        id: id,
+        date: d,
+        produto: prodVal,
+        empresa: fornVal,
+        placa: placaVal,
+        local: 'PESAGEM MANUAL (PENDENTE)',
+        chegada: getBrazilTime(),
+        entrada: getBrazilTime(),
+        tara: 0,
+        bruto: 0,
+        liq: 0,
+        pesoNF: pesoNFVal,
+        difKg: 0 - pesoNFVal,
+        difPerc: pesoNFVal ? (((0 - pesoNFVal) / pesoNFVal) * 100).toFixed(2) : 0,
+        nf: nfVal || 'S/N',
+        notes: motVal ? `Motorista: ${motVal} | REQ: ${reqId}` : `REQ: ${reqId}`,
+        isManual: true
+    });
+
+    saveAll();
+    renderMateriaPrima();
+    document.getElementById('modalManualWeighing').style.display = 'none';
+    alert("Requisição enviada ao administrador e pesagem registrada!");
+}
