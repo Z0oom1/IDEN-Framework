@@ -123,10 +123,11 @@ function checkForNotifications() {
     }
 
     // 3. Notificação de DIVERGÊNCIA
-    const div = requests.find(r => r.type === 'divergence' && r.target === loggedUser.username && r.status === 'pending');
+    const div = requests.find(r => r.type === 'divergence' && r.target === loggedUser.username && (r.status === 'pending' || r.status === 'pendente'));
 
     if (div) {
-        if (!notifiedEvents.has(div.id)) {
+        const divKey = div.id + '_notified';
+        if (!notifiedEvents.has(divKey)) {
             showNotificationPopup('divergence', div);
             
             sendSystemNotification(
@@ -137,7 +138,12 @@ function checkForNotifications() {
                 { icon: '../Imgs/logo-sf.png' }
             );
             
-            notifiedEvents.add(div.id);
+            notifiedEvents.add(divKey);
+            // Marcar como 'seen' no banco para não aparecer na aba de notificações como pendente de alerta visual
+            // mas manter como 'pending' se quisermos que ainda apareça na lista de notificações até ser resolvida.
+            // O usuário quer que apareça "literalmente uma vez apenas", então vamos marcar como 'seen'.
+            div.status = 'seen';
+            saveAll();
         }
     }
 
