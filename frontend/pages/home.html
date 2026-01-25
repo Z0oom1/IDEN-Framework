@@ -534,14 +534,14 @@
                                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                                     <div>
                                         <label style="font-size:0.8rem; font-weight:bold;">Área Principal</label>
-                                        <select id="adminMainSector" class="form-input-styled" onchange="updateSubSectorOptions()">
+                                        <select id="adminMainSector" class="form-input-styled" onchange="updateSubSectorOptions(); renderModulePermissions();">
                                             <option value="Recebimento">Recebimento (Acesso Global)</option>
                                             <option value="Conferencia">Conferência (Acesso Restrito)</option>
                                         </select>
                                     </div>
                                     <div id="adminSubSectorContainer">
                                         <label style="font-size:0.8rem; font-weight:bold;">Sub-Setor / Especialidade</label>
-                                        <select id="adminSubSector" class="form-input-styled">
+                                        <select id="adminSubSector" class="form-input-styled" onchange="renderModulePermissions()">
                                             <option value="Infraestrutura">Infraestrutura</option>
                                             <option value="Manutencao">Manutenção</option>
                                             <option value="Laboratorio">Laboratório</option>

@@ -318,20 +318,46 @@ function renderModulePermissions() {
 }
 
 function updateTempPerm(modId, action, value) {
-    if (!systemPermissions[currentEditingProfile]) systemPermissions[currentEditingProfile] = {};
-    if (!systemPermissions[currentEditingProfile][modId]) systemPermissions[currentEditingProfile][modId] = { view: true, edit: true, delete: true };
+    if (!currentEditingProfile) return;
+    
+    // Inicializa o objeto de permissões para o perfil se não existir
+    if (!systemPermissions[currentEditingProfile]) {
+        // Se for um novo perfil, começa com as permissões padrão
+        let defaultSet = DEFAULT_PERMISSIONS[currentEditingProfile];
+        if (currentEditingProfile === 'Funcionario') {
+            const sector = document.getElementById('adminMainSector').value || 'Conferencia';
+            defaultSet = (sector === 'Recebimento') ? DEFAULT_PERMISSIONS.Funcionario.recebimento : DEFAULT_PERMISSIONS.Funcionario.conferencia;
+        }
+        systemPermissions[currentEditingProfile] = JSON.parse(JSON.stringify(defaultSet || {}));
+    }
+    
+    if (!systemPermissions[currentEditingProfile][modId]) {
+        systemPermissions[currentEditingProfile][modId] = { view: true, edit: true, delete: true };
+    }
+    
     systemPermissions[currentEditingProfile][modId][action] = value;
+    console.log(`Temp Perm Updated: ${currentEditingProfile} -> ${modId}.${action} = ${value}`);
 }
 
 function savePermissions() {
+    if (!currentEditingProfile) return;
+
+    // Garantir que o objeto de permissões existe
+    if (!systemPermissions[currentEditingProfile]) {
+        systemPermissions[currentEditingProfile] = {};
+    }
+
     // Salvar configurações de setor se for Funcionário
     if (currentEditingProfile === 'Funcionario') {
-        if (!systemPermissions[currentEditingProfile]) systemPermissions[currentEditingProfile] = {};
         systemPermissions[currentEditingProfile].mainSector = document.getElementById('adminMainSector').value;
         systemPermissions[currentEditingProfile].subSector = document.getElementById('adminSubSector').value;
     }
 
+    // Persistir no LocalStorage e Servidor
     localStorage.setItem('system_permissions', JSON.stringify(systemPermissions));
+    if (typeof saveToServer === 'function') {
+        saveToServer('system_permissions', systemPermissions);
+    }
     
     // Log de alteração
     const log = {
@@ -339,17 +365,23 @@ function savePermissions() {
         admin: loggedUser.username,
         profile: currentEditingProfile,
         date: new Date().toLocaleString(),
-        action: 'Alteração de permissões granulares'
+        action: `Alteração de permissões para ${currentEditingProfile}`
     };
     adminLogs.push(log);
     localStorage.setItem('admin_logs', JSON.stringify(adminLogs));
     
     document.getElementById('adminLogBadge').innerText = `Última alteração: ${log.date} por ${log.admin}`;
-    alert(`Permissões para o perfil "${currentEditingProfile}" salvas com sucesso!`);
     
-    // Notificar via Socket se disponível
+    // Aplicar imediatamente se o usuário logado for do perfil editado
+    if (loggedUser.role === currentEditingProfile) {
+        updateMenuVisibility();
+    }
+
+    alert(`Permissões para o perfil "${currentEditingProfile}" salvas e aplicadas!`);
+    
+    // Notificar outros terminais
     if (window.socket && socket.connected) {
-        socket.emit('permissions_updated', { profile: currentEditingProfile });
+        socket.emit('permissions_updated', { profile: currentEditingProfile, permissions: systemPermissions });
     }
 }
 

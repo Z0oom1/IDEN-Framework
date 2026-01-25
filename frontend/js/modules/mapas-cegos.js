@@ -44,11 +44,12 @@ function renderMapList() {
             const subUpper = subSector.toUpperCase();
             const mapSectorUpper = (m.setor || '').toUpperCase();
             
-            // Verificação genérica por nome de setor
-            if (mapSectorUpper.includes(subUpper)) return true;
-            
             // Especial para Almoxarifado (ALM)
-            if ((subUpper === 'ALMORARIFADO' || subUpper === 'ALM') && mapSectorUpper.includes('ALM')) return true;
+            if ((subUpper === 'ALMOXARIFADO' || subUpper === 'ALM') && mapSectorUpper.includes('ALM')) return true;
+
+            // Verificação genérica por nome de setor (Remove acentos para comparação)
+            const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            if (normalize(mapSectorUpper).includes(normalize(subUpper))) return true;
 
             return false;
         }

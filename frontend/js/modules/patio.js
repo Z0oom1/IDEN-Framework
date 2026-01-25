@@ -528,12 +528,17 @@ function renderPatio() {
             const localSpecUpper = (c.localSpec || '').toUpperCase();
             
             // ALM vê DOCA (ALM)
-            if (subUpper === 'ALMORARIFADO' || subUpper === 'ALM') {
+            if (subUpper === 'ALMOXARIFADO' || subUpper === 'ALM') {
                 if (localSpecUpper.includes('ALM') || c.local === 'ALM') return true;
             }
             
-            // Verificação genérica por nome de setor
-            if (localSpecUpper.includes(subUpper)) return true;
+            // GAVA vê GAVA
+            if (subUpper === 'GAVA' && (localSpecUpper.includes('GAVA') || c.local === 'GAVA')) return true;
+
+            // Verificação genérica por nome de setor (Ex: LABORATÓRIO, INFRAESTRUTURA)
+            // Removemos acentos para comparação robusta
+            const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            if (normalize(localSpecUpper).includes(normalize(subUpper))) return true;
             
             // Fallback para 'OUTROS'
             if (subUpper === 'OUTROS' && c.local === 'OUT') return true;
