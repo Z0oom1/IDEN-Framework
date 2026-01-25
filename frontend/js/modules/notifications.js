@@ -185,21 +185,25 @@ function renderRequests() {
     h.innerHTML = '';
 
     // Filtra todas as requisições pendentes
-    requests.filter(r => r.status === 'PENDENTE').forEach(r => {
+    // Nota: Algumas requisições usam 'pending' e outras 'PENDENTE'. Vamos normalizar.
+    requests.filter(r => {
+        const status = (r.status || '').toLowerCase();
+        const isTarget = r.target === loggedUser.username || isAdmin;
+        return (status === 'pending' || status === 'pendente') && isTarget;
+    }).forEach(r => {
         let actionBtn = '';
 
         // Se for Entrada de Caminhão (Dados Complexos), abre o Modal de Análise
         if (r.type === 'complex_entry') {
             actionBtn = `<button class="btn btn-save btn-small" onclick="openUnifiedApprovalModal('${r.id}')">Analisar</button>`;
         }
-        // Se for divergência ou edição simples, usa o Aceitar direto
-        else if (r.type !== 'divergence') { // Divergência geralmente só visualiza
-            actionBtn = `<button class="btn btn-save btn-small" onclick="resolveRequest('${r.id}','approved')">Aceitar</button>`;
-        }
-
         // Se for divergência, mostra botão de ver
-        if (r.type === 'divergence') {
+        else if (r.type === 'divergence') {
             actionBtn = `<button class="btn btn-edit btn-small" onclick="navTo('mapas'); loadMap('${r.mapId}')">Ver Mapa</button>`;
+        }
+        // Se for edição simples, usa o Aceitar direto
+        else {
+            actionBtn = `<button class="btn btn-save btn-small" onclick="resolveRequest('${r.id}','approved')">Aceitar</button>`;
         }
 
         l.innerHTML += `
@@ -207,7 +211,7 @@ function renderRequests() {
                 <div>
                     <strong style="text-transform:uppercase; font-size:0.8rem; color:var(--primary);">${r.type.replace('_', ' ')}</strong>
                     <div style="font-size:0.9rem;">${r.msg || 'Verificação de dados pendentes'}</div>
-                    <small style="color:#888;">${new Date(r.timestamp).toLocaleTimeString()}</small>
+                    <small style="color:#888;">${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : ''}</small>
                 </div> 
                 ${actionBtn}
             </div>`;

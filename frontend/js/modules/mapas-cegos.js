@@ -174,15 +174,24 @@ function renderRows(m) {
             if (isConferente && f === 'qty_nf') { val = '---'; ro = true; }
 
             const owner = (r.owners && r.owners[f]) ? `<div style="font-size:0.65rem; color:#94a3b8; margin-top:-5px; padding:0 10px;">${r.owners[f]}</div>` : '';
+            
+            const labels = {
+                'desc': 'Descrição',
+                'qty_nf': 'Qtd. NF',
+                'qty': 'Contada',
+                'nf': 'Nota Fiscal',
+                'forn': 'Fornecedor'
+            };
+            const label = labels[f] || '';
 
             if (f === 'desc') {
-                return `<td>
+                return `<td data-label="${label}">
                     <input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%; cursor:pointer; color:var(--primary); font-weight:600;" onclick="showProductCodePopup(this.value)" title="Clique para ver o código">
                     ${owner}
                 </td>`;
             }
 
-            return `<td>
+            return `<td data-label="${label}">
                 <input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%">
                 ${owner}
             </td>`;
@@ -367,12 +376,21 @@ function submitDivergence() {
 }
 
 function resolveDivergence(id) { 
-    if (confirm('Confirmar a resolução desta divergência? Isso removerá o alerta vermelho do mapa.')) { 
+    if (confirm('Confirmar a resolução desta divergência? Isso removerá o alerta vermelho do mapa e as notificações pendentes.')) { 
         const m = mapData.find(x => x.id === id); 
         if (m) { 
             m.divergence = null; 
+            
+            // Remove notificações relacionadas a este mapa
+            for (let i = requests.length - 1; i >= 0; i--) {
+                if (requests[i].mapId === id && requests[i].type === 'divergence') {
+                    requests[i].status = 'resolved';
+                }
+            }
+            
             saveAll(); 
             loadMap(id); 
+            if (typeof renderRequests === 'function') renderRequests();
         } 
     } 
 }

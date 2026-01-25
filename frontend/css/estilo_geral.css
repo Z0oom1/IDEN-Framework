@@ -2546,3 +2546,83 @@ body.fast-mode .mc-item {
     left: 50%;
     transform: translate(-50%, -50%);
 }
+/* ==========================================================================
+   MELHORIAS DE RESPONSIVIDADE - MAPA CEGO MOBILE
+   ========================================================================== */
+@media (max-width: 768px) {
+    .mc-table thead {
+        display: none; /* Esconde o cabeçalho da tabela no mobile */
+    }
+
+    .mc-table, .mc-table tbody, .mc-table tr, .mc-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .mc-table tr {
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .mc-table td {
+        border: none;
+        position: relative;
+        padding-left: 40% !important;
+        text-align: left;
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .mc-table td:last-child {
+        border-bottom: none;
+    }
+
+    .mc-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 35%;
+        font-weight: 700;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .sheet input.cell {
+        padding: 5px 0;
+        font-size: 0.9rem;
+    }
+
+    .sheet-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .sheet-header .title {
+        font-size: 1rem !important;
+        margin: 10px 0;
+    }
+
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .controls button {
+        width: 100%;
+    }
+
+    .extras {
+        flex-direction: column;
+    }
+
+    .extras > div {
+        width: 100% !important;
+    }
+}
