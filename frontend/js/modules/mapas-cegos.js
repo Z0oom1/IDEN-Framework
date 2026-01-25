@@ -345,7 +345,8 @@ function launchMap() {
 function signMap(role) { 
     const m = mapData.find(x => x.id === currentMapId); 
     if (!m) return; 
-    if (role === 'receb' && !isRecebimento) return alert('Apenas usuários do Recebimento podem assinar aqui.'); 
+    const canSignReceb = isRecebimento || (loggedUser && loggedUser.role && loggedUser.role.toUpperCase() === 'OPERADOR');
+    if (role === 'receb' && !canSignReceb) return alert('Apenas usuários do Recebimento ou Operadores podem assinar aqui.'); 
     if (role === 'conf' && !isConferente) return alert('Apenas Conferentes podem assinar aqui.'); 
     
     const sigName = loggedUser.username + ' (' + new Date().toLocaleTimeString().slice(0, 5) + ')';

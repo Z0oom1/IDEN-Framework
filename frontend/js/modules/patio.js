@@ -524,7 +524,7 @@ function renderPatio() {
         const roleUpper = uRole.toUpperCase();
         const sectorUpper = uSector.toUpperCase();
         if (typeof isAdmin !== 'undefined' && isAdmin) return true;
-        if (roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || sectorUpper === 'RECEBIMENTO') return true;
+        if (roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || roleUpper === 'OPERADOR' || sectorUpper === 'RECEBIMENTO') return true;
         if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
         
         // 2. Conferentes veem apenas seus setores (Isolamento)
@@ -580,7 +580,7 @@ function renderPatio() {
         // 1. Admin, Portaria e Recebimento (Setor ou Cargo) têm permissão total ou ampla
         // 2. Conferentes têm permissão apenas se o caminhão estiver no seu setor (SubType bate com LocalSpec ou Local)
         
-        const isSuperUser = roleUpper.includes('ADMIN') || roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || sectorUpper === 'RECEBIMENTO';
+        const isSuperUser = roleUpper.includes('ADMIN') || roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || roleUpper === 'OPERADOR' || sectorUpper === 'RECEBIMENTO';
         
         let canAction = isSuperUser;
         
