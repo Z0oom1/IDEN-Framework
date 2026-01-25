@@ -284,7 +284,7 @@
                     <tbody id="mpBody"></tbody>
                 </table>
             </div>
-            <div class="fab" onclick="openManualWeighingModal()">+</div>
+            <div class="fab" onclick="openManualWeighingModal()" title="Nova Pesagem Manual">+</div>
         </div>
 
         <div id="view-carregamento" class="view-section">
@@ -1035,6 +1035,65 @@
     <!-- ========================================================================== -->
 
     <!-- CAMADA 1: Fundação (Validações) -->
+    <!-- MODAIS DE CARREGAMENTO MANUAL -->
+    <div id="modalCarregamento" class="modal-overlay">
+        <div class="modal-box" style="width: 500px;">
+            <h3>Novo Carregamento Manual</h3>
+            <div class="form-grid">
+                <div class="form-full">
+                    <label>Motorista</label>
+                    <input type="text" id="carrMotorista" class="form-input-styled" placeholder="Nome do motorista...">
+                </div>
+                <div class="form-full">
+                    <label>Cavalo (Placa)</label>
+                    <input type="text" id="carrCavalo" class="form-input-styled" placeholder="Placa do cavalo...">
+                </div>
+                <div class="form-full">
+                    <label>Carretas</label>
+                    <div id="carretaContainer">
+                        <input type="text" class="carrCarretaInput form-input-styled" placeholder="Placa da carreta...">
+                    </div>
+                    <button class="btn btn-edit btn-small" style="margin-top:5px;" onclick="addCarretaField()">+ Adicionar Carreta</button>
+                </div>
+            </div>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn btn-edit" onclick="document.getElementById('modalCarregamento').style.display='none'">Cancelar</button>
+                <button class="btn btn-save" onclick="saveCarregamento()">Salvar Carregamento</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEditCarr" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Editar Carregamento</h3>
+            <input type="hidden" id="editCarrId">
+            <div class="form-group">
+                <label>Motorista</label>
+                <input id="editCarrMot" class="form-input-styled">
+            </div>
+            <div class="form-group">
+                <label>Cavalo</label>
+                <input id="editCarrCav" class="form-input-styled">
+            </div>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn btn-edit" onclick="document.getElementById('modalEditCarr').style.display='none'">Cancelar</button>
+                <button class="btn btn-save" onclick="saveEditCarr()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalNoteCarr" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Observação do Carregamento</h3>
+            <input type="hidden" id="noteCarrId">
+            <textarea id="noteCarrText" class="form-input-styled" rows="5"></textarea>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn btn-edit" onclick="document.getElementById('modalNoteCarr').style.display='none'">Cancelar</button>
+                <button class="btn btn-save" onclick="saveNoteCarr()">Salvar Nota</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/modules/validators.js"></script>
 
     <!-- CAMADA 2: Infraestrutura (Config e Dados) -->

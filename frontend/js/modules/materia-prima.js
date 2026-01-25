@@ -149,13 +149,8 @@ function deleteMateriaPrima() {
 }
 
 function openManualMPModal() {
-    document.getElementById('manMPPlaca').value = '';
-    document.getElementById('manMPProd').value = '';
-    document.getElementById('manMPEmp').value = '';
-    document.getElementById('manMPNF').value = '';
-    document.getElementById('manMPTara').value = '0';
-    document.getElementById('modalManualMP').style.display = 'flex';
-    closeContextMenu();
+    // Redireciona para a nova função que usa o modal correto
+    openManualWeighingModal();
 }
 
 function saveManualMP() {
