@@ -33,19 +33,19 @@ testAccounts.push({ username: 'EncarConf', sector: 'conferente', subType: null, 
 async function fazerLogin() {
     const userIn = document.getElementById('loginUser').value;
     const passIn = document.getElementById('loginPass').value;
-    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
     console.log("Tentando logar em:", API_URL || 'Local/Proxy');
 
-    // Tenta autenticar no servidor quando disponível
+    // Tenta autenticar no servidor
     if (window.location.protocol !== 'file:') {
         try {
             // Usa a URL configurada no config.js ou cai no Proxy do Vite (/api)
-            const fetchUrl = API_URL ? `${API_URL}/api/login` : '/api/login';
+            const fetchUrl = API_URL ? `${API_URL}/api/auth/login` : '/api/auth/login';
             
             const resp = await fetch(fetchUrl, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ username: userIn, password: passIn })
             });
 
@@ -56,24 +56,18 @@ async function fazerLogin() {
                 loginComUsuario(serverUser);
                 return;
             } else {
-                console.warn('Login falhou no servidor:', resp.status);
+                const error = await resp.json();
+                alert(error.error || "Usuário ou senha incorretos.");
+                return;
             }
         } catch (e) {
-            console.warn('Falha ao conectar ao servidor, tentando login local.', e);
+            console.error('Falha ao conectar ao servidor:', e);
+            alert('Erro ao conectar ao servidor. Tente novamente.');
+            return;
         }
     }
 
-    // Login local (fallback)
-    const user = users.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
-
-    if (user) {
-        if (user.firstLogin) {
-            sessionStorage.setItem('must_change_pw', user.username);
-        }
-        loginComUsuario(user);
-    } else {
-        alert("Usuário ou senha incorretos.");
-    }
+    alert("Servidor não disponível.");
 }
 
 // Login: armazenamento de sessão e redirecionamento
@@ -136,11 +130,12 @@ function abrirSwitcher() {
             if (window.location.protocol !== 'file:') {
                 try {
                     const senha = defaultPass[acc.username] || '123';
-                    const fetchUrl = API_URL ? `${API_URL}/api/login` : '/api/login';
+                    const fetchUrl = API_URL ? `${API_URL}/api/auth/login` : '/api/auth/login';
                     
                     const resp = await fetch(fetchUrl, {
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({ username: acc.username, password: senha })
                     });
 

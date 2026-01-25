@@ -84,7 +84,15 @@ function refreshCurrentView() {
     if (typeof updateAccountRequestBadge === 'function') updateAccountRequestBadge();
 }
 
-function logout() { sessionStorage.removeItem('loggedInUser'); window.location.href = 'login.html'; }
+function logout() {
+    if (typeof AUTH_SYNC !== 'undefined' && AUTH_SYNC.logout) {
+        AUTH_SYNC.logout();
+    } else {
+        sessionStorage.removeItem('loggedInUser');
+        sessionStorage.removeItem('aw_token');
+        window.location.href = 'login.html';
+    }
+}
 
 function checkElectronEnvironment() {
     const isElectron = /electron/i.test(navigator.userAgent);

@@ -33,7 +33,23 @@ async function checkServerStatus() {
 async function loadDataFromServer() {
     await checkServerStatus();
     try {
-        const response = await fetch(`${API_URL}/api/sync?t=${Date.now()}`, { cache: "no-store" });
+        const token = sessionStorage.getItem('aw_token');
+        const headers = { 'Cache-Control': 'no-store' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(`${API_URL}/api/sync?t=${Date.now()}`, {
+            cache: "no-store",
+            headers: headers,
+            credentials: 'include'
+        });
+
+        if (response.status === 401) {
+            console.warn('[Data Sync] Token expired, redirecting to login');
+            sessionStorage.clear();
+            window.location.href = '/pages/login.html';
+            return;
+        }
+
         if (!response.ok) throw new Error("Offline");
         const data = await response.json();
 
@@ -93,9 +109,14 @@ function saveAll() {
 }
 
 function saveToServer(key, data) {
+    const token = sessionStorage.getItem('aw_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     fetch(`${API_URL}/api/sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
+        credentials: 'include',
         body: JSON.stringify({ key: key, data: data })
     }).catch(err => console.error("Erro ao salvar no servidor:", err));
 }
