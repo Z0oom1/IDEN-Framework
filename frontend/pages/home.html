@@ -968,6 +968,57 @@
     </div>
     <div id="modalUnifiedApproval" class="modal-overlay" style="z-index: 8000;">
     </div>
+
+    <!-- MODAL DE DIVERGÊNCIA DETALHADA -->
+    <div id="modalDivergence" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-box" style="width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header-styled">
+                <h3><i class="fas fa-exclamation-triangle"></i> Registrar Divergência Detalhada</h3>
+                <button class="btn-icon-remove" onclick="document.getElementById('modalDivergence').style.display='none'"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                <div id="divMapInfo" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                    <!-- Preenchido via JS -->
+                </div>
+
+                <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Selecione os itens com divergência:</h4>
+                <div class="table-responsive-wrapper" style="margin-bottom: 20px;">
+                    <table class="mc-table" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">Sel.</th>
+                                <th>Item / Produto</th>
+                                <th>NF</th>
+                                <th>Qtd. NF</th>
+                                <th>Qtd. Contada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="divItemsTable">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-full">
+                    <label style="font-weight: bold;">Relato Detalhado da Divergência</label>
+                    <textarea id="divReason" class="form-input-styled" style="height: 100px; resize: none; padding: 10px;" placeholder="Descreva detalhadamente o que foi encontrado..."></textarea>
+                </div>
+
+                <div class="form-full" style="margin-top: 20px;">
+                    <label style="font-weight: bold;">Notificar Responsáveis:</label>
+                    <div id="divUserList" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e2e8f0; text-align: right;">
+                <button class="btn btn-edit" onclick="document.getElementById('modalDivergence').style.display='none'">Cancelar</button>
+                <button class="btn btn-save" style="background: #dc2626;" onclick="submitDivergence()">Registrar Divergência</button>
+            </div>
+        </div>
+    </div>
     <!-- ========================================================================== -->
     <!--  WILSON CORE 2.4.3 - SISTEMA MODULARIZADO                                -->
     <!--  Carrega todos os módulos na ordem correta de dependência                -->

@@ -1,5 +1,5 @@
 // ===================================================================================
-//          MÓDULO DE MAPAS CEGOS
+//          MÓDULO DE MAPAS CEGOS - V4.0 (Divergência Detalhada + Linhas Dinâmicas)
 // ===================================================================================
 
 let currentMapId = null;
@@ -30,11 +30,8 @@ function renderMapList() {
             const uSubType = userSubType.toUpperCase();
             const mapSectorUpper = (m.setor || '').toUpperCase();
 
-            // Almoxarifado vê mapas ALM
             if (uSubType === 'ALM' && mapSectorUpper.includes('ALM')) return true;
-            // Gava vê mapas GAVA
             if (uSubType === 'GAVA' && mapSectorUpper.includes('GAVA')) return true;
-            // Outros conferentes veem seus setores específicos
             if (mapSectorUpper.includes(uSubType)) return true;
 
             return false;
@@ -76,14 +73,50 @@ function renderMapList() {
 function loadMap(id) {
     currentMapId = id; const m = mapData.find(x => x.id === id); if (!m) return;
     document.getElementById('mapDate').value = m.date; document.getElementById('mapPlaca').value = m.placa; document.getElementById('mapSetor').value = m.setor;
+    
     const b = document.getElementById('divBanner');
-    if (m.divergence) { b.style.display = 'block'; document.getElementById('divBannerText').innerHTML = `De: ${m.divergence.reporter}<br>"${m.divergence.reason}"`; document.getElementById('divResolveBtn').innerHTML = isRecebimento ? `<button class="btn btn-save" onclick="resolveDivergence('${m.id}')">Resolver</button>` : ''; }
+    if (m.divergence) { 
+        b.style.display = 'block'; 
+        document.getElementById('divBannerText').innerHTML = `De: ${m.divergence.reporter}<br>"${m.divergence.reason}"`; 
+        document.getElementById('divResolveBtn').innerHTML = isRecebimento ? `<button class="btn btn-save" onclick="resolveDivergence('${m.id}')">Resolver</button>` : ''; 
+    }
     else b.style.display = 'none';
+    
     const st = document.getElementById('mapStatus');
-    if (m.launched && !m.forceUnlock) { st.textContent = 'LANÇADO (Bloqueado)'; st.style.color = 'green'; document.getElementById('btnLaunch').style.display = 'none'; document.getElementById('btnRequestEdit').style.display = isConferente ? 'inline-block' : 'none'; }
-    else { st.textContent = m.forceUnlock ? 'EM EDIÇÃO (Desbloqueado)' : 'Rascunho'; st.style.color = m.forceUnlock ? 'orange' : '#666'; document.getElementById('btnLaunch').style.display = 'inline-block'; document.getElementById('btnRequestEdit').style.display = 'none'; }
-    document.getElementById('sigReceb').textContent = m.signatures.receb || ''; document.getElementById('sigConf').textContent = m.signatures.conf || '';
-    renderRows(m); renderMapList(); updateMapState();
+    if (m.launched && !m.forceUnlock) { 
+        st.textContent = 'LANÇADO (Bloqueado)'; 
+        st.style.color = 'green'; 
+        document.getElementById('btnLaunch').style.display = 'none'; 
+        document.getElementById('btnRequestEdit').style.display = isConferente ? 'inline-block' : 'none'; 
+    }
+    else { 
+        st.textContent = m.forceUnlock ? 'EM EDIÇÃO (Desbloqueado)' : 'Rascunho'; 
+        st.style.color = m.forceUnlock ? 'orange' : '#666'; 
+        document.getElementById('btnLaunch').style.display = 'inline-block'; 
+        document.getElementById('btnRequestEdit').style.display = 'none'; 
+    }
+    
+    // Renderizar assinaturas múltiplas
+    renderSignatures(m);
+    
+    renderRows(m); 
+    renderMapList(); 
+    updateMapState();
+}
+
+function renderSignatures(m) {
+    const sigRecebCont = document.getElementById('sigReceb');
+    const sigConfCont = document.getElementById('sigConf');
+    
+    if (sigRecebCont) {
+        const sigs = m.signatures.receb_list || (m.signatures.receb ? [m.signatures.receb] : []);
+        sigRecebCont.innerHTML = sigs.map(s => `<div style="border-bottom:1px solid #eee; padding:2px 0;">${s}</div>`).join('');
+    }
+    
+    if (sigConfCont) {
+        const sigs = m.signatures.conf_list || (m.signatures.conf ? [m.signatures.conf] : []);
+        sigConfCont.innerHTML = sigs.map(s => `<div style="border-bottom:1px solid #eee; padding:2px 0;">${s}</div>`).join('');
+    }
 }
 
 function openMapContextMenu(x, y, id) {
@@ -119,38 +152,247 @@ function renderRows(m) {
 
     m.rows.forEach(r => {
         const tr = document.createElement('tr');
+        
+        // Se houver divergência marcada para esta linha, destaca
+        if (m.divergence && m.divergence.items && m.divergence.items.includes(r.id)) {
+            tr.style.background = '#fff5f5';
+        }
 
         const createCell = (f, role) => {
             let ro = locked;
             if (!locked) {
                 if (role === 'conf' && !isConferente) ro = true;
                 if (role === 'receb' && !isRecebimento) ro = true;
+                
+                // Regra de Edição Forçada: Somente quem inseriu pode editar
+                if (m.forceUnlock && r.owners && r.owners[f] && r.owners[f] !== loggedUser.username && !isAdmin) {
+                    ro = true;
+                }
             }
-            let val = r[f];
-            if (val === undefined || val === null) val = '';
-
+            
+            let val = r[f] || '';
             if (isConferente && f === 'qty_nf') { val = '---'; ro = true; }
 
+            const owner = (r.owners && r.owners[f]) ? `<div style="font-size:0.65rem; color:#94a3b8; margin-top:-5px; padding:0 10px;">${r.owners[f]}</div>` : '';
+
             if (f === 'desc') {
-                return `<td><input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%; cursor:pointer; color:var(--primary); font-weight:600;" onclick="showProductCodePopup(this.value)" title="Clique para ver o código"></td>`;
+                return `<td>
+                    <input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%; cursor:pointer; color:var(--primary); font-weight:600;" onclick="showProductCodePopup(this.value)" title="Clique para ver o código">
+                    ${owner}
+                </td>`;
             }
 
-            return `<td><input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%"></td>`;
+            return `<td>
+                <input type="text" class="cell" value="${val}" ${ro ? 'readonly' : ''} onchange="updateRow('${r.id}','${f}',this.value)" style="width:100%">
+                ${owner}
+            </td>`;
         };
 
         tr.innerHTML = `${createCell('desc', 'receb')} ${createCell('qty_nf', 'receb')} ${createCell('qty', 'conf')} ${createCell('nf', 'receb')} ${createCell('forn', 'receb')}`;
         tb.appendChild(tr);
     });
+    
+    // Adicionar botão de "Mais Linhas" se não estiver bloqueado
+    if (!locked) {
+        const footerTr = document.createElement('tr');
+        footerTr.innerHTML = `<td colspan="5" style="text-align:center; padding:10px;">
+            <button class="btn btn-edit" onclick="addMapRow()" style="font-size:0.8rem; padding:5px 15px;">+ Adicionar Linha</button>
+        </td>`;
+        tb.appendChild(footerTr);
+    }
 }
 
-function updateRow(rid, f, v) { const m = mapData.find(x => x.id === currentMapId); const r = m.rows.find(x => x.id === rid); if (r) { r[f] = v; saveAll(); } }
+function addMapRow() {
+    const m = mapData.find(x => x.id === currentMapId);
+    if (!m) return;
+    
+    const newId = m.id + '_' + m.rows.length;
+    m.rows.push({ id: newId, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} });
+    saveAll();
+    renderRows(m);
+}
+
+function updateRow(rid, f, v) { 
+    const m = mapData.find(x => x.id === currentMapId); 
+    const r = m.rows.find(x => x.id === rid); 
+    if (r) { 
+        r[f] = v; 
+        if (!r.owners) r.owners = {};
+        r.owners[f] = loggedUser.username; // Registra quem alterou
+        saveAll(); 
+        // Não renderiza tudo de novo para não perder o foco, mas atualiza o owner visualmente se necessário
+        // Para simplificar neste MVP, vamos renderizar apenas se o valor mudou de vazio para algo
+        if (v) renderRows(m);
+    } 
+}
+
 function saveCurrentMap() { const m = mapData.find(x => x.id === currentMapId); if (m) { m.date = document.getElementById('mapDate').value; m.placa = document.getElementById('mapPlaca').value; m.setor = document.getElementById('mapSetor').value; saveAll(); alert('Salvo.'); renderMapList(); } }
-function launchMap() { const m = mapData.find(x => x.id === currentMapId); if (!m.signatures.receb || !m.signatures.conf) { alert('Assinaturas obrigatórias.'); return; } if (confirm('Lançar?')) { m.launched = true; m.forceUnlock = false; saveAll(); loadMap(currentMapId); } }
-function signMap(role) { const m = mapData.find(x => x.id === currentMapId); if (!m) return; if (role === 'receb' && !isRecebimento) return alert('Só Recebimento'); if (role === 'conf' && !isConferente) return alert('Só Conferente'); m.signatures[role] = loggedUser.username + ' ' + new Date().toLocaleTimeString().slice(0, 5); saveAll(); loadMap(currentMapId); }
-function createNewMap() { const id = Date.now().toString(); const rows = []; for (let i = 0; i < 8; i++) rows.push({ id: id + '_' + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} }); mapData.push({ id, date: getBrazilTime().split('T')[0], rows, placa: '', setor: '', launched: false, signatures: {}, divergence: null }); saveAll(); renderMapList(); loadMap(id); }
+
+function launchMap() { 
+    const m = mapData.find(x => x.id === currentMapId); 
+    const hasReceb = (m.signatures.receb_list && m.signatures.receb_list.length > 0) || m.signatures.receb;
+    const hasConf = (m.signatures.conf_list && m.signatures.conf_list.length > 0) || m.signatures.conf;
+    
+    if (!hasReceb || !hasConf) { 
+        alert('Assinaturas obrigatórias (Recebimento e Conferência).'); 
+        return; 
+    } 
+    if (confirm('Lançar Definitivo? O mapa será bloqueado para edições comuns.')) { 
+        m.launched = true; 
+        m.forceUnlock = false; 
+        saveAll(); 
+        loadMap(currentMapId); 
+    } 
+}
+
+function signMap(role) { 
+    const m = mapData.find(x => x.id === currentMapId); 
+    if (!m) return; 
+    if (role === 'receb' && !isRecebimento) return alert('Apenas usuários do Recebimento podem assinar aqui.'); 
+    if (role === 'conf' && !isConferente) return alert('Apenas Conferentes podem assinar aqui.'); 
+    
+    const sigName = loggedUser.username + ' (' + new Date().toLocaleTimeString().slice(0, 5) + ')';
+    
+    if (role === 'receb') {
+        if (!m.signatures.receb_list) m.signatures.receb_list = m.signatures.receb ? [m.signatures.receb] : [];
+        if (!m.signatures.receb_list.includes(sigName)) m.signatures.receb_list.push(sigName);
+        m.signatures.receb = sigName; // Fallback para compatibilidade
+    } else {
+        if (!m.signatures.conf_list) m.signatures.conf_list = m.signatures.conf ? [m.signatures.conf] : [];
+        if (!m.signatures.conf_list.includes(sigName)) m.signatures.conf_list.push(sigName);
+        m.signatures.conf = sigName; // Fallback para compatibilidade
+    }
+    
+    saveAll(); 
+    loadMap(currentMapId); 
+}
+
+function createNewMap() { 
+    const id = Date.now().toString(); 
+    const rows = []; 
+    for (let i = 0; i < 8; i++) rows.push({ id: id + '_' + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} }); 
+    mapData.push({ id, date: getBrazilTime().split('T')[0], rows, placa: '', setor: '', launched: false, signatures: {}, divergence: null }); 
+    saveAll(); 
+    renderMapList(); 
+    loadMap(id); 
+}
+
 function forceUnlockMap(id) { const m = mapData.find(x => x.id === id); if (m) { m.forceUnlock = true; saveAll(); loadMap(id); closeContextMenu(); } }
 
-function openDivergenceModal(id) { contextMapId = id; document.getElementById('divUserList').innerHTML = ['Caio', 'Balanca', 'Fabricio', 'Admin'].map(u => `<label style="display:block"><input type="checkbox" value="${u}"> ${u}</label>`).join(''); document.getElementById('divReason').value = ''; document.getElementById('modalDivergence').style.display = 'flex'; closeContextMenu(); }
-function submitDivergence() { const m = mapData.find(x => x.id === contextMapId); if (m) { m.divergence = { active: true, reason: document.getElementById('divReason').value, reporter: loggedUser.username }; const t = Array.from(document.querySelectorAll('#divUserList input:checked')).map(x => x.value); t.forEach(u => requests.push({ id: Date.now() + Math.random(), type: 'divergence', user: loggedUser.username, target: u, mapId: contextMapId, msg: m.divergence.reason, status: 'pending' })); saveAll(); document.getElementById('modalDivergence').style.display = 'none'; loadMap(contextMapId); } }
-function resolveDivergence(id) { if (confirm('Resolver?')) { const m = mapData.find(x => x.id === id); if (m) { m.divergence = null; saveAll(); loadMap(id); } } }
-function triggerRequest(type, mid) { const t = mid || currentMapId; const u = prompt('Para quem?'); const r = prompt('Motivo'); if (u && r) { requests.push({ id: Date.now(), mapId: t, user: loggedUser.username, target: u, type, msg: r, status: 'pending' }); saveAll(); closeContextMenu(); alert('Solicitado'); } }
+// ===================================================================================
+//  SISTEMA DE DIVERGÊNCIA DETALHADA
+// ===================================================================================
+
+function openDivergenceModal(id) { 
+    contextMapId = id; 
+    const m = mapData.find(x => x.id === id);
+    if (!m) return;
+
+    // Info do Mapa
+    document.getElementById('divMapInfo').innerHTML = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.9rem;">
+            <div><b>Placa:</b> ${m.placa || '---'}</div>
+            <div><b>Setor:</b> ${m.setor || '---'}</div>
+            <div><b>Data:</b> ${m.date}</div>
+            <div><b>Status:</b> ${m.launched ? 'Lançado' : 'Rascunho'}</div>
+        </div>
+    `;
+
+    // Tabela de Itens para Seleção
+    const tbody = document.getElementById('divItemsTable');
+    tbody.innerHTML = '';
+    m.rows.forEach(r => {
+        if (!r.desc && !r.nf) return; // Pula linhas vazias
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:center"><input type="checkbox" class="div-item-check" value="${r.id}"></td>
+            <td>${r.desc || '(Sem descrição)'}</td>
+            <td>${r.nf || '---'}</td>
+            <td>${r.qty_nf || '---'}</td>
+            <td>${r.qty || '---'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Lista de Usuários para Notificar
+    document.getElementById('divUserList').innerHTML = ['Caio', 'Balanca', 'Fabricio', 'Admin'].map(u => `
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem;">
+            <input type="checkbox" class="div-user-check" value="${u}"> ${u}
+        </label>
+    `).join(''); 
+    
+    document.getElementById('divReason').value = ''; 
+    document.getElementById('modalDivergence').style.display = 'flex'; 
+    closeContextMenu(); 
+}
+
+function submitDivergence() { 
+    const m = mapData.find(x => x.id === contextMapId); 
+    const reason = document.getElementById('divReason').value.trim();
+    const selectedItems = Array.from(document.querySelectorAll('.div-item-check:checked')).map(el => el.value);
+    const selectedUsers = Array.from(document.querySelectorAll('.div-user-check:checked')).map(el => el.value);
+
+    if (!reason) return alert('Por favor, descreva o motivo da divergência.');
+    if (selectedItems.length === 0) {
+        if (!confirm('Nenhum item específico foi selecionado. Deseja registrar a divergência no mapa como um todo?')) return;
+    }
+
+    if (m) { 
+        m.divergence = { 
+            active: true, 
+            reason: reason, 
+            reporter: loggedUser.username,
+            items: selectedItems,
+            timestamp: new Date().toISOString()
+        }; 
+        
+        // Criar requisições para os usuários selecionados
+        selectedUsers.forEach(u => {
+            requests.push({ 
+                id: Date.now() + Math.random(), 
+                type: 'divergence', 
+                user: loggedUser.username, 
+                target: u, 
+                mapId: contextMapId, 
+                msg: `DIVERGÊNCIA: ${reason} (Mapa: ${m.placa})`, 
+                status: 'pending' 
+            });
+        });
+
+        saveAll(); 
+        document.getElementById('modalDivergence').style.display = 'none'; 
+        loadMap(contextMapId); 
+        alert('Divergência registrada com sucesso!');
+    } 
+}
+
+function resolveDivergence(id) { 
+    if (confirm('Confirmar a resolução desta divergência? Isso removerá o alerta vermelho do mapa.')) { 
+        const m = mapData.find(x => x.id === id); 
+        if (m) { 
+            m.divergence = null; 
+            saveAll(); 
+            loadMap(id); 
+        } 
+    } 
+}
+
+function triggerRequest(type, mid) { 
+    const t = mid || currentMapId; 
+    const u = prompt('Para quem deseja enviar esta solicitação?'); 
+    const r = prompt('Qual o motivo da solicitação?'); 
+    if (u && r) { 
+        requests.push({ 
+            id: Date.now(), 
+            mapId: t, 
+            user: loggedUser.username, 
+            target: u, 
+            type, 
+            msg: r, 
+            status: 'pending' 
+        }); 
+        saveAll(); 
+        closeContextMenu(); 
+        alert('Solicitação enviada com sucesso.'); 
+    } 
+}
