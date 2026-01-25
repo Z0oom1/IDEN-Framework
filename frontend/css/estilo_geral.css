@@ -131,6 +131,78 @@ body {
     opacity: 1;
 }
 
+/* Badges e Ícones na Fila */
+.weigh-badge, .laudo-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.weigh-badge { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.laudo-badge { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+.expand-icon {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    width: 15px;
+}
+
+.expanded-prod-list {
+    margin: 10px 0;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #475569;
+    border-left: 3px solid #cbd5e1;
+}
+
+/* Estilização do Menu de Contexto */
+.context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    min-width: 180px;
+    padding: 5px 0;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.ctx-header {
+    padding: 8px 15px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 700;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ctx-item {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #334155;
+    transition: background 0.2s;
+}
+
+.ctx-item:hover { background: #f1f5f9; color: var(--primary); }
+.ctx-item.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.ctx-divider { height: 1px; background: #f1f5f9; margin: 5px 0; }
+
+/* Detalhes de Relatório */
+.detail-header h3 { font-size: 1.2rem; font-weight: 700; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.form-grid strong { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+
+
 .app-title {
     flex-grow: 1;
     text-align: center;

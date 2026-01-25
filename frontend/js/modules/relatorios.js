@@ -250,6 +250,39 @@ function openReportDetails(indexOrId, typeOverride) {
         `;
 
         buttons = `<button class="btn btn-save" onclick="document.getElementById('modalReportDetail').style.display='none'; navTo('mapas'); loadMap('${item.mapId}')"><i class="fas fa-search-location"></i> VER NO MAPA</button>`;
+    } else {
+        // Detalhes genéricos para Pátio, Mapas e Pesagem
+        const id = item.id;
+        const inMap = mapData.some(m => m.id === id);
+        const inWeighing = mpData.some(w => w.id === id);
+
+        html = `
+            <div class="detail-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin:0; color:var(--primary);">${item.empresa || item.fornecedor || 'REGISTRO'}</h3>
+                <small style="color:#666;">ID: ${id}</small>
+            </div>
+            <div class="form-grid">
+                <div><strong>Placa:</strong><br>${item.placa || '---'}</div>
+                <div><strong>Data:</strong><br>${(item.chegada || item.date || item.checkin || '').slice(0, 10).split('-').reverse().join('/')}</div>
+                <div><strong>Status:</strong><br><span class="status-badge st-ok" style="padding:2px 8px; font-size:0.7rem;">${item.status || (item.launched ? 'LANÇADO' : 'PENDENTE')}</span></div>
+                <div><strong>Local/Setor:</strong><br>${item.localSpec || item.setor || '---'}</div>
+            </div>
+            <div style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+                <strong>Produtos/Carga:</strong>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-top:5px; font-size:0.85rem;">
+                    ${item.produto ? `• ${item.produto}` : (item.cargas?.[0]?.produtos?.map(p => `• ${p.nome}`).join('<br>') || 'Nenhum produto listado')}
+                </div>
+            </div>
+        `;
+
+        buttons = `
+            <button class="btn btn-edit" onclick="document.getElementById('modalReportDetail').style.display='none'; navTo('mapas'); loadMap('${id}')" ${!inMap ? 'disabled' : ''}>
+                <i class="fas fa-clipboard-check"></i> MAPA CEGO
+            </button>
+            <button class="btn btn-save" onclick="document.getElementById('modalReportDetail').style.display='none'; navTo('materia-prima'); loadMP('${id}')" ${!inWeighing ? 'disabled' : ''}>
+                <i class="fas fa-weight"></i> PESAGEM
+            </button>
+        `;
     }
 
     content.innerHTML = html;

@@ -49,6 +49,10 @@ function renderMapList() {
         `;
 
         el.onclick = () => { loadMap(m.id); };
+        el.oncontextmenu = (e) => {
+            e.preventDefault();
+            openMapContextMenu(e.pageX, e.pageY, m.id);
+        };
         l.appendChild(el);
     });
 }
@@ -66,20 +70,31 @@ function loadMap(id) {
     renderRows(m); renderMapList(); updateMapState();
 }
 
-function deleteMap(id) {
-    if (confirm('Excluir Mapa?')) {
-        mapData = mapData.filter(x => x.id !== id);
-        if (currentMapId === id) currentMapId = null;
-        saveAll(); renderMapList(); updateMapState(); closeContextMenu();
-    }
-}
+function openMapContextMenu(x, y, id) {
+    contextMapId = id;
+    const m = mapData.find(x => x.id === id);
+    if (!m) return;
 
-function openContextMenu(x, y, m) {
+    const inWeighing = mpData.some(w => w.id === id);
     const menu = document.getElementById('ctxMenu');
-    let html = `<div class="ctx-item" style="color:red" onclick="openDivergenceModal('${m.id}')">Divergência</div>`;
-    if (isConferente) html += `<div class="ctx-item" onclick="triggerRequest('edit','${m.id}')">Solicitar Edição</div>`;
-    else html += `<div class="ctx-item" onclick="forceUnlockMap('${m.id}')">Forçar Edição</div><div class="ctx-item" style="color:red" onclick="deleteMap('${m.id}')">Excluir</div>`;
-    menu.innerHTML = html; menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+
+    let html = `<div class="ctx-header">Mapa: ${m.placa}</div>`;
+    html += `<div class="ctx-item" style="color:red" onclick="openDivergenceModal('${id}')"><i class="fas fa-exclamation-triangle"></i> Divergência</div>`;
+    
+    if (isConferente) {
+        html += `<div class="ctx-item" onclick="triggerRequest('edit','${id}')"><i class="fas fa-edit"></i> Solicitar Edição</div>`;
+    } else {
+        html += `<div class="ctx-item" onclick="forceUnlockMap('${id}')"><i class="fas fa-unlock"></i> Forçar Edição</div>`;
+        html += `<div class="ctx-divider"></div>`;
+        html += `<div class="ctx-item ${!inWeighing ? 'disabled' : ''}" onclick="${inWeighing ? `navTo('materia-prima'); loadMP('${id}')` : ''}"><i class="fas fa-weight"></i> Levar para Pesagem</div>`;
+        html += `<div class="ctx-divider"></div>`;
+        html += `<div class="ctx-item" style="color:red" onclick="confirmDeleteTruck('${id}')"><i class="fas fa-trash"></i> Excluir...</div>`;
+    }
+
+    menu.innerHTML = html;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
 }
 
 function renderRows(m) {

@@ -4,6 +4,19 @@
 
 let contextMPId = null;
 
+function loadMP(id) {
+    const item = mpData.find(m => m.id === id);
+    if (item) {
+        document.getElementById('mpDateFilter').value = item.date;
+        renderMateriaPrima();
+        // Opcional: Scroll até o item ou destaque visual
+        setTimeout(() => {
+            const el = Array.from(document.querySelectorAll('#mpBody tr')).find(tr => tr.innerHTML.includes(item.placa));
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    }
+}
+
 function renderMateriaPrima() {
     const tb = document.getElementById('mpBody');
     tb.innerHTML = '';

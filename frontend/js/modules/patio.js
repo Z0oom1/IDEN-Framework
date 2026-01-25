@@ -580,29 +580,45 @@ function renderPatio() {
             else if (c.status === 'ENTROU') btn = `<button onclick="changeStatus('${c.id}','SAIU')" class="btn btn-edit" style="width:100%; margin-top:5px;">SAÍDA</button>`;
         }
 
+        const inWeighing = mpData.some(m => m.id === c.id);
+        const weighBadge = inWeighing ? '<span class="weigh-badge" title="Já existe na pesagem"><i class="fas fa-weight"></i></span>' : '';
+        const laudoBadge = c.comLaudo ? '<span class="laudo-badge" title="Tem Laudo"><i class="fas fa-flask"></i></span>' : '';
+
         card.innerHTML = `
             <div class="card-basic" style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span></div>
-                    <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
-                    <div class="sector-tag">${c.localSpec}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-caret-right expand-icon" style="color:#aaa; transition: transform 0.2s;"></i>
+                    <div>
+                        <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${weighBadge} ${laudoBadge}</div>
+                        <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
+                        <div class="sector-tag">${c.localSpec}</div>
+                    </div>
                 </div>
-                <i class="fas fa-chevron-down" style="color:#aaa; font-size:0.9rem; transition: transform 0.2s;"></i>
             </div>
             <div class="status-badge st-${c.status === 'FILA' ? 'wait' : (c.status === 'LIBERADO' ? 'called' : (c.status === 'ENTROU' ? 'ok' : 'out'))}">${c.status}</div>
             <div class="card-expanded-content" style="display:none">
-                ${(c.cargas?.[0]?.produtos?.map(p => `<div>${p.nome}</div>`).join('') || '')}
+                <div class="expanded-prod-list">
+                    ${(c.cargas?.[0]?.produtos?.map(p => `<div><i class="fas fa-box-open" style="font-size:0.7rem; opacity:0.5;"></i> ${p.nome}</div>`).join('') || '')}
+                </div>
                 ${btn}
             </div>
         `;
+
         card.onclick = (e) => { 
             if (e.target.tagName !== 'BUTTON') { 
                 const exp = card.querySelector('.card-expanded-content'); 
-                const icon = card.querySelector('.fa-chevron-down');
+                const icon = card.querySelector('.expand-icon');
                 const isHidden = exp.style.display === 'none';
                 exp.style.display = isHidden ? 'block' : 'none';
-                if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                if (icon) icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
             } 
+        };
+
+        card.oncontextmenu = (e) => {
+            e.preventDefault();
+            if (isAdmin || isEncarregado || userSector === 'recebimento') {
+                openTruckContextMenu(e.pageX, e.pageY, c.id);
+            }
         };
         container.appendChild(card);
     });
@@ -637,16 +653,28 @@ function changeStatus(id, st) {
 
 function openTruckContextMenu(x, y, id) {
     contextTruckId = id;
+    const truck = patioData.find(t => t.id === id);
+    if (!truck) return;
+
+    const inWeighing = mpData.some(m => m.id === id);
     const m = document.getElementById('ctxMenuTruck');
 
     m.innerHTML = `
+        <div class="ctx-header">Ações: ${truck.placa}</div>
         <div class="ctx-item" onclick="openEditTruck('${id}')"><i class="fas fa-edit"></i> Editar Veículo</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" onclick="navTo('mapas'); loadMap('${id}')"><i class="fas fa-clipboard-check"></i> Ver Mapa Cego</div>
+        <div class="ctx-item ${!inWeighing ? 'disabled' : ''}" onclick="${inWeighing ? `navTo('materia-prima'); loadMP('${id}')` : ''}">
+            <i class="fas fa-weight"></i> Levar para Pesagem
+        </div>
+        <div class="ctx-divider"></div>
         <div class="ctx-item" onclick="confirmDeleteTruck('${id}')" style="color:red"><i class="fas fa-trash"></i> Excluir...</div>
     `;
 
     let posX = x;
     let posY = y;
     if (x + 200 > window.innerWidth) posX = window.innerWidth - 220;
+    if (y + 250 > window.innerHeight) posY = window.innerHeight - 250;
 
     m.style.left = posX + 'px';
     m.style.top = posY + 'px';
@@ -763,9 +791,20 @@ function saveEditTruck() {
 
     if (truckIndex > -1) {
         const truck = patioData[truckIndex];
+        const oldLaudo = truck.comLaudo;
 
         truck.placa = placa;
         truck.comLaudo = laudo;
+
+        // Notificar se laudo mudou para 'Tem Laudo'
+        if (!oldLaudo && laudo) {
+            notifications.push({
+                id: Date.now(),
+                type: 'laudo',
+                msg: `Veículo ${placa} agora possui laudo disponível.`,
+                timestamp: new Date().toISOString()
+            });
+        }
 
         const secMap = {
             'DOCA': { n: 'DOCA (ALM)', c: 'ALM' },
@@ -787,6 +826,21 @@ function saveEditTruck() {
         }
 
         if (editTmpItems && editTmpItems.length > 0) {
+            // Checar se existem produtos novos e criar requisição
+            editTmpItems.forEach(item => {
+                const exists = productsData.some(p => p.nome === item.nome);
+                if (!exists) {
+                    requests.push({
+                        id: Date.now() + Math.random(),
+                        type: 'new_product',
+                        prod: item.nome,
+                        truckId: id,
+                        status: 'pending',
+                        user: loggedUser.username
+                    });
+                }
+            });
+
             if (!truck.cargas || truck.cargas.length === 0) truck.cargas = [{}];
             truck.cargas[0].produtos = JSON.parse(JSON.stringify(editTmpItems));
 
