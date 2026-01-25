@@ -168,7 +168,12 @@ function renderRows(m) {
     const tb = document.getElementById('mapBody'); tb.innerHTML = '';
     const locked = m.launched && !m.forceUnlock;
 
+    const isMobile = window.innerWidth <= 768;
+
     m.rows.forEach(r => {
+        // No mobile, se a linha estiver totalmente vazia (sem descrição e sem NF), nós a ocultamos
+        if (isMobile && !r.desc && !r.nf && !r.qty && !r.qty_nf) return;
+
         const tr = document.createElement('tr');
         
         // Se houver divergência marcada para esta linha, destaca

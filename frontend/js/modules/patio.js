@@ -521,8 +521,10 @@ function renderPatio() {
         
         // Regra de permissão por setor:
         // 1. Admin, Portaria e Recebimento veem tudo
+        const roleUpper = uRole.toUpperCase();
+        const sectorUpper = uSector.toUpperCase();
         if (typeof isAdmin !== 'undefined' && isAdmin) return true;
-        if (uRole.toUpperCase() === 'PORTARIA') return true;
+        if (roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || sectorUpper === 'RECEBIMENTO') return true;
         if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
         
         // 2. Conferentes veem apenas seus setores (Isolamento)
