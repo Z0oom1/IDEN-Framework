@@ -1,414 +1,367 @@
-
 // ===================================================================================
-//          GESTÃO DE MÓDULOS CUSTOMIZADOS E PERMISSÕES
+//          GESTÃO DE MÓDULOS CUSTOMIZADOS E PERMISSÕES (DINÂMICO)
 // ===================================================================================
 
-let customModules = [];
-
-// Lista de Módulos Padrão do Sistema (Hardcoded)
+// Lista de Módulos Padrão do Sistema para o Controle de Permissões
 const SYSTEM_MODULES = [
-    { id: 'view-patio', title: 'Controle de Pátio', icon: 'fas fa-truck' },
-    { id: 'view-mapas', title: 'Mapas Cegos', icon: 'fas fa-clipboard-check' },
-    { id: 'view-materia-prima', title: 'Pesagem', icon: 'fas fa-weight-hanging' },
-    { id: 'view-carregamento', title: 'Carregamento', icon: 'fas fa-dolly' },
-    { id: 'view-relatorios', title: 'Relatórios', icon: 'fas fa-chart-pie' },
-    { id: 'view-dashboard', title: 'Dashboard', icon: 'fas fa-chart-line' },
-    { id: 'view-cadastros', title: 'Cadastros', icon: 'fas fa-address-book' },
-    { id: 'view-produtos', title: 'Produtos', icon: 'fas fa-boxes' },
-    { id: 'view-notificacoes', title: 'Notificações', icon: 'fas fa-bell' },
-    { id: 'view-configuracoes', title: 'Configurações', icon: 'fas fa-cog' },
-    { id: 'view-perfil', title: 'Perfil / Admin', icon: 'fas fa-user-circle' }
+    { id: 'menu:patio', title: 'Controle de Pátio', icon: 'fas fa-truck' },
+    { id: 'menu:mapas', title: 'Mapas Cegos', icon: 'fas fa-clipboard-check' },
+    { id: 'menu:materia-prima', title: 'Pesagem', icon: 'fas fa-weight-hanging' },
+    { id: 'menu:carregamento', title: 'Carregamento', icon: 'fas fa-dolly' },
+    { id: 'menu:relatorios', title: 'Relatórios', icon: 'fas fa-chart-pie' },
+    { id: 'menu:dashboard', title: 'Dashboard', icon: 'fas fa-chart-line' },
+    { id: 'menu:cadastros', title: 'Cadastros', icon: 'fas fa-address-book' },
+    { id: 'menu:produtos', title: 'Produtos', icon: 'fas fa-boxes' },
+    { id: 'menu:notificacoes', title: 'Notificações', icon: 'fas fa-bell' },
+    { id: 'menu:configuracoes', title: 'Configurações', icon: 'fas fa-cog' },
+    { id: 'menu:perfil', title: 'Perfil / Admin', icon: 'fas fa-user-circle' }
 ];
 
-// --- CARREGAMENTO INICIAL ---
+// --- RENDERIZAÇÃO DA INTERFACE DE GESTÃO (ADMIN) ---
 
-async function loadCustomModules() {
-    try {
-        // Tenta carregar do servidor (via sync endpoint que retorna tudo)
-        // Se já tiver sido carregado pelo data-sync, usamos a variável global
-        // Mas como data-sync não conhece customModules, precisamos buscar manualmente ou integrar
-        // Para simplificar, vamos buscar via API específica ou usar o generic sync se disponível
-        
-        // Na arquitetura atual, loadDataFromServer() preenche variáveis globais.
-        // Vamos assumir que data-sync foi atualizado para trazer 'aw_custom_modules'
-        // Se não, fazemos um fetch direto
-        
-        const response = await fetch(`${API_URL}/api/sync?key=aw_custom_modules`, { cache: "no-store" });
-        if (response.ok) {
-            const data = await response.json();
-            // A API sync retorna { key: ..., data: ... } ou apenas o objeto se filtrado?
-            // Baseado no data-sync.js, ela retorna tudo. Vamos assumir que adicionamos no data-sync
-            // Mas para garantir independência agora:
-            customModules = data.aw_custom_modules || []; 
-        }
-    } catch (e) {
-        console.warn("Offline ou erro ao carregar módulos customizados:", e);
-        customModules = JSON.parse(localStorage.getItem('aw_custom_modules') || '[]');
-    }
-    
-    injectCustomSidebarItems();
+function renderCustomModulesAdmin() {
+    const container = document.getElementById('customModulesAdmin');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="settings-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h4 style="margin:0;"><i class="fas fa-plug"></i> Módulos Customizados</h4>
+                <button class="btn btn-save btn-small" onclick="openModuleEditor()">+ Novo Módulo</button>
+            </div>
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Ícone</th>
+                        <th>Nome</th>
+                        <th>ID</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${customModulesData.map(m => `
+                        <tr>
+                            <td><i class="${m.icon}"></i></td>
+                            <td><b>${m.label}</b></td>
+                            <td><code>${m.id}</code></td>
+                            <td>
+                                <button class="btn btn-edit btn-small" onclick="openModuleEditor('${m.id}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-edit btn-small" style="color:red; border-color:red;" onclick="deleteModule('${m.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                    ${customModulesData.length === 0 ? '<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum módulo instalado.</td></tr>' : ''}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal Editor de Módulo -->
+        <div id="modalModuleEditor" class="modal-overlay" style="display:none;">
+            <div class="modal-content" style="max-width:900px; width:95%;">
+                <div class="modal-header">
+                    <h3 id="moduleEditorTitle">Novo Módulo</h3>
+                    <span class="close-modal" onclick="closeModuleEditor()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div><label>Nome do Menu:</label><input type="text" id="modLabel" class="form-control" placeholder="Ex: Meu Relatório"></div>
+                        <div><label>ID Único (apenas letras/números):</label><input type="text" id="modId" class="form-control" placeholder="Ex: meu_relatorio"></div>
+                        <div><label>Ícone FontAwesome:</label><input type="text" id="modIcon" class="form-control" placeholder="Ex: fas fa-file-invoice"></div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label>Conteúdo HTML (CSS/JS podem ser incluídos em tags &lt;style&gt; e &lt;script&gt;):</label>
+                        <textarea id="modHtml" class="form-control" style="height:300px; font-family:monospace; font-size:12px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-edit" onclick="closeModuleEditor()">Cancelar</button>
+                    <button class="btn btn-save" onclick="saveModule()">Salvar Módulo</button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
-// --- RENDERIZAÇÃO DA SIDEBAR ---
+let editingModuleId = null;
 
-function injectCustomSidebarItems() {
-    // 1. Identificar permissões do usuário logado
-    const userPerms = getUserPermissions(loggedUser);
+function openModuleEditor(id = null) {
+    editingModuleId = id;
+    const modal = document.getElementById('modalModuleEditor');
+    const title = document.getElementById('moduleEditorTitle');
     
-    // 2. Controlar visibilidade dos módulos PADRÃO
+    if (id) {
+        const m = customModulesData.find(x => x.id === id);
+        if (m) {
+            title.innerText = 'Editar Módulo: ' + m.label;
+            document.getElementById('modLabel').value = m.label;
+            document.getElementById('modId').value = m.id;
+            document.getElementById('modId').disabled = true;
+            document.getElementById('modIcon').value = m.icon;
+            document.getElementById('modHtml').value = m.html;
+        }
+    } else {
+        title.innerText = 'Novo Módulo';
+        document.getElementById('modLabel').value = '';
+        document.getElementById('modId').value = '';
+        document.getElementById('modId').disabled = false;
+        document.getElementById('modIcon').value = 'fas fa-cube';
+        document.getElementById('modHtml').value = '<h2>Olá Mundo</h2>\n<p>Este é um novo módulo.</p>';
+    }
+    modal.style.display = 'flex';
+}
+
+function closeModuleEditor() {
+    document.getElementById('modalModuleEditor').style.display = 'none';
+}
+
+function saveModule() {
+    const label = document.getElementById('modLabel').value;
+    const id = document.getElementById('modId').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const icon = document.getElementById('modIcon').value;
+    const html = document.getElementById('modHtml').value;
+
+    if (!label || !id) return alert('Preencha Nome e ID.');
+
+    const newMod = { id, label, icon, html };
+
+    if (editingModuleId) {
+        const idx = customModulesData.findIndex(x => x.id === editingModuleId);
+        if (idx !== -1) customModulesData[idx] = newMod;
+    } else {
+        if (customModulesData.find(x => x.id === id)) return alert('Este ID já está em uso.');
+        customModulesData.push(newMod);
+    }
+
+    saveAll();
+    closeModuleEditor();
+    renderCustomModulesAdmin();
+    injectCustomMenus(); // Atualiza a barra lateral
+    alert('Módulo salvo com sucesso!');
+}
+
+function deleteModule(id) {
+    if (confirm('Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.')) {
+        customModulesData = customModulesData.filter(x => x.id !== id);
+        saveAll();
+        renderCustomModulesAdmin();
+        injectCustomMenus();
+        alert('Módulo removido.');
+    }
+}
+
+// --- INJEÇÃO DINÂMICA DE MENUS E CONTEÚDO ---
+
+function injectCustomMenus() {
+    const sidebar = document.querySelector('.menu-items');
+    if (!sidebar) return;
+
+    // Controla visibilidade dos módulos padrão baseado nas permissões
     SYSTEM_MODULES.forEach(mod => {
-        // Mapeia ID da view para ID do menu (ex: view-patio -> menuPatio)
-        // Se não tiver ID padrão, tentamos achar pelo onclick ou href
-        // Simplificação: vamos buscar pelo onclick contendo o ID da view
-        const menuEl = document.querySelector(`.menu-item[onclick*="'${mod.id.replace('view-', '')}'"]`) || 
-                       document.getElementById(mod.id.replace('view-', 'menu')); // Fallback para IDs conhecidos
-        
-        if (menuEl) {
-            if (userPerms.includes(mod.id)) {
-                menuEl.style.display = 'flex';
+        const menuId = mod.id.split(':')[1];
+        // Mapeia IDs de menu conhecidos no HTML
+        const elementId = {
+            'patio': 'menuPatio',
+            'materia-prima': 'menuMateriaPrima',
+            'carregamento': 'menuCarregamento',
+            'dashboard': 'menuDashboard',
+            'cadastros': 'menuCadastros',
+            'notificacoes': 'menuNotif'
+        }[menuId];
+
+        let el = elementId ? document.getElementById(elementId) : null;
+        if (!el) {
+            el = document.querySelector(`.menu-item[onclick*="'${menuId}'"]`);
+        }
+
+        if (el) {
+            if (hasPermission(mod.id)) {
+                el.style.display = 'flex';
             } else {
-                menuEl.style.display = 'none';
+                el.style.display = 'none';
             }
         }
     });
 
-    // 3. Injetar Módulos CUSTOMIZADOS
-    // Remove itens customizados antigos para evitar duplicação
+    // Remove itens customizados antigos para reinjetar
     document.querySelectorAll('.menu-item-custom').forEach(el => el.remove());
-    
-    const menuContainer = document.querySelector('.menu-items');
-    // Insere antes do divisor de configurações
-    const divider = menuContainer.querySelector('div[style*="margin-top:auto"]');
+    document.querySelectorAll('.view-section-custom').forEach(el => el.remove());
 
-    customModules.forEach(mod => {
-        if (userPerms.includes(mod.id)) {
-            const a = document.createElement('a');
-            a.className = 'menu-item menu-item-custom';
-            a.innerHTML = `<i class="${mod.icon || 'fas fa-puzzle-piece'}"></i> ${mod.title}`;
-            a.onclick = function() {
-                openCustomModule(mod.id, this);
-            };
-            menuContainer.insertBefore(a, divider);
+    const mainContent = document.querySelector('.content-area');
+
+    customModulesData.forEach(m => {
+        const permId = `module:${m.id}`;
+        if (!hasPermission(permId)) return;
+
+        // Injeta na Sidebar
+        const a = document.createElement('a');
+        a.className = 'menu-item menu-item-custom';
+        a.id = `menu-custom-${m.id}`;
+        a.onclick = () => navTo(`custom-${m.id}`, a);
+        a.innerHTML = `<i class="${m.icon}"></i> ${m.label}`;
+        
+        // Insere antes do item de configurações (que geralmente está no final com margin-top:auto)
+        const configLink = document.querySelector('a[onclick*="configuracoes"]');
+        const configContainer = configLink ? configLink.parentElement : null;
+        
+        if (configContainer && configContainer.parentElement === sidebar) {
+            sidebar.insertBefore(a, configContainer);
+        } else if (configContainer) {
+             // Se o link de config estiver dentro de uma div (como a div de margin-top:auto)
+             sidebar.insertBefore(a, configContainer);
+        } else {
+            sidebar.appendChild(a);
         }
+
+        // Injeta a View Section
+        const section = document.createElement('div');
+        section.id = `view-custom-${m.id}`;
+        section.className = 'view-section view-section-custom';
+        
+        // Sandboxing com Shadow DOM
+        const shadow = section.attachShadow({mode: 'open'});
+        shadow.innerHTML = `
+            <style>
+                :host { display: block; padding: 20px; font-family: 'Inter', sans-serif; color: #333; }
+                * { box-sizing: border-box; }
+                /* Herda algumas variáveis de cor básicas se possível ou define fallbacks */
+                :host { --primary: #2563eb; --text-main: #1f2937; }
+            </style>
+            <div class="module-wrapper">
+                ${m.html}
+            </div>
+        `;
+        
+        mainContent.appendChild(section);
     });
 }
 
-function getUserPermissions(user) {
-    // Se o usuário já tem permissões explícitas salvas
-    if (user.permissions && Array.isArray(user.permissions) && user.permissions.length > 0) {
-        return user.permissions;
-    }
+// --- CONTROLE DE PERMISSÕES ---
 
-    // FALLBACK: Lógica legada para usuários sem permissões definidas
-    const perms = [];
-    const sector = (user.sector || '').toLowerCase();
-    const role = (user.role || '').toLowerCase();
-    const subType = user.subType;
-    const isAdmin = role.includes('admin') || role.includes('administrador');
+function hasPermission(permId) {
+    if (isAdmin) return true; // Administrador tem acesso total
+    if (!loggedUser) return false;
     
-    // Todo mundo vê perfil e config (básico)
-    perms.push('view-perfil');
-    // Configurações geralmente para todos, mas itens internos são bloqueados
-    perms.push('view-configuracoes'); 
-    perms.push('view-notificacoes');
-
-    if (isAdmin) {
-        return SYSTEM_MODULES.map(m => m.id).concat(customModules.map(m => m.id));
-    }
-
-    if (sector === 'recebimento') {
-        perms.push('view-patio', 'view-mapas', 'view-materia-prima', 'view-cadastros', 'view-produtos', 'view-dashboard');
+    const perms = userPermissionsData[loggedUser.username];
+    
+    // Se não houver permissões definidas, aplica lógica de fallback (opcional)
+    if (!perms) {
+        // Fallback básico para novos usuários sem configuração
+        const basicPerms = ['menu:perfil', 'menu:configuracoes', 'menu:notificacoes'];
+        return basicPerms.includes(permId);
     }
     
-    if (sector === 'conferente') {
-        perms.push('view-patio', 'view-mapas', 'view-produtos');
-        if (subType === 'ALM' || subType === 'GAVA') {
-            // Almoxarifado/Gava vê patio filtrado (tratado no patio.js)
-        } else {
-            // Outros conferentes
-        }
-    }
-    
-    // Logística/Carregamento
-    if (role.includes('logistica') || role.includes('expedicao')) {
-        perms.push('view-carregamento', 'view-patio');
-    }
-
-    return perms;
+    return perms.includes(permId);
 }
-
-// --- EXECUÇÃO DE MÓDULO ---
-
-function openCustomModule(moduleId, menuElement) {
-    // UI Navigation
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-    
-    if (menuElement) menuElement.classList.add('active');
-    
-    const container = document.getElementById('view-custom-module');
-    container.classList.add('active');
-    
-    const contentBox = document.getElementById('customModuleContainer');
-    contentBox.innerHTML = ''; // Limpa anterior
-    
-    const mod = customModules.find(m => m.id === moduleId);
-    if (!mod) return;
-
-    // Título na Header
-    document.getElementById('pageTitle').textContent = mod.title;
-
-    // Injeção de HTML
-    contentBox.innerHTML = mod.htmlContent || '<p>Sem conteúdo.</p>';
-
-    // Injeção de CSS (Scoped)
-    if (mod.cssContent) {
-        const styleId = `style-${moduleId}`;
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = mod.cssContent;
-            document.head.appendChild(style);
-        }
-    }
-
-    // Execução de JS
-    if (mod.jsContent) {
-        try {
-            // Wrap em IIFE para isolar escopo (levemente)
-            const scriptFunc = new Function('container', mod.jsContent);
-            scriptFunc(contentBox);
-        } catch (e) {
-            console.error("Erro ao executar script do módulo:", e);
-            contentBox.innerHTML += `<div style="color:red; padding:10px; border:1px solid red;">Erro de Script: ${e.message}</div>`;
-        }
-    }
-}
-
-// --- GESTÃO (ADMIN UI) ---
-
-function renderModuleManager() {
-    const container = document.getElementById('view-configuracoes').querySelector('.settings-grid');
-    
-    // Verifica se já existe o card
-    if (document.getElementById('cardModuleManager')) return;
-
-    const card = document.createElement('div');
-    card.className = 'settings-card';
-    card.id = 'cardModuleManager';
-    card.style.gridColumn = "span 2"; // Ocupa largura total se possível
-    
-    card.innerHTML = `
-        <h4><i class="fas fa-puzzle-piece"></i> Gestão de Módulos (Admin)</h4>
-        <div style="margin-bottom:15px; font-size:0.9rem; color:#666;">
-            Crie novos menus e funcionalidades para o sistema.
-        </div>
-        <div id="moduleList" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
-            ${renderModuleBadges()}
-        </div>
-        <button class="btn btn-save" onclick="openModuleEditor()">+ Novo Módulo</button>
-    `;
-    
-    container.appendChild(card);
-}
-
-function renderModuleBadges() {
-    if (customModules.length === 0) return '<span style="color:#999; font-style:italic;">Nenhum módulo instalado.</span>';
-    
-    return customModules.map(m => `
-        <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:5px 10px; border-radius:20px; display:flex; align-items:center; gap:5px;">
-            <i class="${m.icon}"></i> ${m.title}
-            <i class="fas fa-edit" style="cursor:pointer; color:orange; margin-left:5px;" onclick="openModuleEditor('${m.id}')"></i>
-            <i class="fas fa-trash" style="cursor:pointer; color:red;" onclick="deleteModule('${m.id}')"></i>
-        </div>
-    `).join('');
-}
-
-function openModuleEditor(id = null) {
-    const mod = id ? customModules.find(m => m.id === id) : { id: '', title: '', icon: 'fas fa-star', htmlContent: '<h3>Meu Módulo</h3>', cssContent: '', jsContent: '// console.log("Ola mundo");' };
-    const isNew = !id;
-
-    // Cria modal dinamicamente
-    let modal = document.getElementById('modalModuleEditor');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modalModuleEditor';
-        modal.className = 'modal-overlay';
-        modal.style.zIndex = '9999';
-        document.body.appendChild(modal);
-    }
-
-    modal.innerHTML = `
-        <div class="modal-box" style="width:800px; max-width:95vw;">
-            <h3>${isNew ? 'Novo Módulo' : 'Editar Módulo'}</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Título do Menu</label>
-                    <input id="modTitle" class="form-input-styled" value="${mod.title}">
-                </div>
-                <div class="form-group">
-                    <label>Ícone (FontAwesome)</label>
-                    <input id="modIcon" class="form-input-styled" value="${mod.icon}">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>HTML (Conteúdo)</label>
-                <textarea id="modHtml" class="form-input-styled" style="height:150px; font-family:monospace;">${mod.htmlContent}</textarea>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                <div class="form-group">
-                    <label>CSS (Estilos)</label>
-                    <textarea id="modCss" class="form-input-styled" style="height:150px; font-family:monospace;">${mod.cssContent}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Javascript (Lógica)</label>
-                    <textarea id="modJs" class="form-input-styled" style="height:150px; font-family:monospace;">${mod.jsContent}</textarea>
-                </div>
-            </div>
-
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalModuleEditor').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" onclick="saveModule('${mod.id}')">Salvar Módulo</button>
-            </div>
-        </div>
-    `;
-    
-    modal.style.display = 'flex';
-}
-
-function saveModule(originalId) {
-    const title = document.getElementById('modTitle').value;
-    const icon = document.getElementById('modIcon').value;
-    const html = document.getElementById('modHtml').value;
-    const css = document.getElementById('modCss').value;
-    const js = document.getElementById('modJs').value;
-
-    if (!title) return alert("Título é obrigatório");
-
-    let id = originalId;
-    if (!id) {
-        // Gera ID baseado no título
-        id = 'mod-' + title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
-    }
-
-    const newMod = { id, title, icon, htmlContent: html, cssContent: css, jsContent: js };
-
-    if (originalId) {
-        const idx = customModules.findIndex(m => m.id === originalId);
-        if (idx !== -1) customModules[idx] = newMod;
-    } else {
-        customModules.push(newMod);
-    }
-
-    // Persiste
-    saveCustomModules();
-    
-    document.getElementById('modalModuleEditor').style.display = 'none';
-    renderModuleManager(); // Atualiza lista
-    injectCustomSidebarItems(); // Atualiza menu
-    alert("Módulo salvo com sucesso!");
-}
-
-function deleteModule(id) {
-    if (confirm("Tem certeza que deseja excluir este módulo?")) {
-        customModules = customModules.filter(m => m.id !== id);
-        saveCustomModules();
-        renderModuleManager();
-        injectCustomSidebarItems();
-    }
-}
-
-function saveCustomModules() {
-    localStorage.setItem('aw_custom_modules', JSON.stringify(customModules));
-    // Tenta salvar no servidor se possível
-    if (typeof saveToServer === 'function') {
-        saveToServer('aw_custom_modules', customModules);
-    }
-}
-
-// --- INTERFACE DE PERMISSÕES (Chamada pelo users.js) ---
 
 function openPermissionEditor(username) {
     const user = usersData.find(u => u.username === username);
-    if (!user) return alert("Usuário não encontrado");
+    if (!user) return alert('Usuário não encontrado.');
 
     let modal = document.getElementById('modalPermEditor');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'modalPermEditor';
         modal.className = 'modal-overlay';
-        modal.style.zIndex = '9998';
+        modal.style.zIndex = '10001';
         document.body.appendChild(modal);
     }
 
-    const currentPerms = getUserPermissions(user);
+    const currentPerms = userPermissionsData[username] || [];
 
-    const renderCheck = (id, label) => {
+    const renderCheck = (id, label, icon) => {
         const checked = currentPerms.includes(id) ? 'checked' : '';
         return `
-            <label class="checkbox-container" style="display:flex; align-items:center; gap:10px; padding:5px; border-bottom:1px solid #eee;">
-                <input type="checkbox" value="${id}" ${checked}> ${label}
+            <label style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid rgba(0,0,0,0.05); cursor:pointer;">
+                <input type="checkbox" value="${id}" ${checked} style="width:18px; height:18px;">
+                <i class="${icon}" style="width:20px; text-align:center; color:var(--primary);"></i>
+                <span>${label}</span>
             </label>
         `;
     };
 
     modal.innerHTML = `
-        <div class="modal-box" style="width:500px;">
-            <h3>Permissões: ${user.username}</h3>
-            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Selecione os módulos que este usuário pode acessar.</p>
-            
-            <div style="max-height:400px; overflow-y:auto; margin-bottom:20px;">
-                <h5 style="margin:10px 0; color:var(--primary);">Sistema Base</h5>
-                ${SYSTEM_MODULES.map(m => renderCheck(m.id, m.title)).join('')}
-                
-                <h5 style="margin:10px 0; color:var(--primary);">Módulos Customizados</h5>
-                ${customModules.length ? customModules.map(m => renderCheck(m.id, m.title)).join('') : '<small>Nenhum módulo customizado.</small>'}
+        <div class="modal-content" style="max-width:500px; width:95%;">
+            <div class="modal-header">
+                <h3>Permissões: ${user.username}</h3>
+                <span class="close-modal" onclick="document.getElementById('modalPermEditor').style.display='none'">&times;</span>
             </div>
-
-            <div style="text-align:right;">
+            <div class="modal-body" style="max-height:60vh; overflow-y:auto;">
+                <h5 style="margin:10px 0; color:#666; text-transform:uppercase; font-size:0.75rem;">Menus do Sistema</h5>
+                ${SYSTEM_MODULES.map(m => renderCheck(m.id, m.title, m.icon)).join('')}
+                
+                <h5 style="margin:20px 0 10px 0; color:#666; text-transform:uppercase; font-size:0.75rem;">Módulos Customizados</h5>
+                ${customModulesData.length > 0 
+                    ? customModulesData.map(m => renderCheck(`module:${m.id}`, m.label, m.icon)).join('')
+                    : '<p style="font-size:0.85rem; color:#999; padding:10px;">Nenhum módulo customizado disponível.</p>'
+                }
+            </div>
+            <div class="modal-footer">
                 <button class="btn btn-edit" onclick="document.getElementById('modalPermEditor').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" onclick="savePermissions('${user.username}')">Salvar Acessos</button>
+                <button class="btn btn-save" onclick="saveUserPermissions('${username}')">Salvar Permissões</button>
             </div>
         </div>
     `;
     modal.style.display = 'flex';
 }
 
-function savePermissions(username) {
-    const checkboxes = document.querySelectorAll('#modalPermEditor input[type="checkbox"]:checked');
-    const newPerms = Array.from(checkboxes).map(cb => cb.value);
+function saveUserPermissions(username) {
+    const modal = document.getElementById('modalPermEditor');
+    const checks = modal.querySelectorAll('input[type="checkbox"]:checked');
+    const selectedPerms = Array.from(checks).map(c => c.value);
+
+    userPermissionsData[username] = selectedPerms;
+    saveAll();
     
-    const userIdx = usersData.findIndex(u => u.username === username);
-    if (userIdx !== -1) {
-        usersData[userIdx].permissions = newPerms;
-        saveAll(); // Salva usersData atualizado
-        alert("Permissões atualizadas!");
-        document.getElementById('modalPermEditor').style.display = 'none';
+    alert(`Permissões de ${username} atualizadas!`);
+    modal.style.display = 'none';
+    
+    // Se for o próprio usuário logado, atualiza a interface imediatamente
+    if (loggedUser && loggedUser.username === username) {
+        injectCustomMenus();
     }
 }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-    // Aguarda um pouco para garantir que data-sync rodou (se possível)
-    setTimeout(() => {
-        loadCustomModules();
+// --- INTEGRAÇÃO COM NAVEGAÇÃO ---
+
+// Sobrescreve a função navTo para suportar módulos customizados
+const originalNavTo = window.navTo;
+window.navTo = function(view, el) {
+    if (view.startsWith('custom-')) {
+        const modId = view.replace('custom-', '');
+        const mod = customModulesData.find(m => m.id === modId);
         
-        // Se for admin, renderiza o gerenciador nas configurações
-        if (typeof isAdmin !== 'undefined' && isAdmin) {
-            // Observa se estamos na aba de configurações para renderizar
-            const observer = new MutationObserver(() => {
-                if (document.getElementById('view-configuracoes').classList.contains('active')) {
-                    renderModuleManager();
-                }
-            });
-            observer.observe(document.getElementById('view-configuracoes'), { attributes: true });
-            
-            // Renderiza inicial se já estiver lá (refresh da página)
-            if (document.getElementById('view-configuracoes').classList.contains('active')) {
-                renderModuleManager();
-            }
-        }
+        if (!mod) return;
+
+        // Esconde todas as seções
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        
+        // Mostra a seção customizada
+        const section = document.getElementById('view-' + view);
+        if (section) section.classList.add('active');
+
+        // Atualiza menu lateral
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        if (el) el.classList.add('active');
+
+        // Atualiza títulos
+        const pt = document.getElementById('pageTitle');
+        if (pt) pt.textContent = mod.label;
+        
+        const appTitle = document.querySelector('.app-title');
+        if (appTitle) appTitle.innerText = `CONTROLADORIA AW - ${mod.label.toUpperCase()}`;
+
+        localStorage.setItem('aw_last_view', view);
+        return;
+    }
+    
+    // Chama a função original para as rotas padrão
+    if (typeof originalNavTo === 'function') originalNavTo(view, el);
+};
+
+// Inicialização automática ao carregar o script
+document.addEventListener('DOMContentLoaded', () => {
+    // Pequeno delay para garantir que o data-sync carregou os dados do servidor
+    setTimeout(() => {
+        injectCustomMenus();
     }, 1000);
 });

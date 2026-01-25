@@ -130,19 +130,16 @@
         </header>
 
         <div id="view-patio" class="view-section active">
-            <div
-                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:var(--bg-input); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+            <!-- Conteúdo do Pátio -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:var(--bg-input); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
                 <div style="display:flex; gap:20px; align-items:center;">
                     <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Gerenciamento de Pátio</h3>
-                    <div
-                        style="background:var(--bg-card); padding:5px 15px; border-radius:20px; border:1px solid var(--border-color); font-size:0.9rem;">
+                    <div style="background:var(--bg-card); padding:5px 15px; border-radius:20px; border:1px solid var(--border-color); font-size:0.9rem;">
                         Caminhões Ativos: <b id="totalTrucksBadge" style="color:var(--primary); font-size:1.1rem;">0</b>
                     </div>
                 </div>
-                <input type="date" id="patioDateFilter" onchange="renderPatio()"
-                    style="width:auto; border:1px solid #ccc;">
+                <input type="date" id="patioDateFilter" onchange="renderPatio()" style="width:auto; border:1px solid #ccc;">
             </div>
-
             <div class="board-container">
                 <div class="board-col" id="col-ALM">
                     <div class="col-header col-alm">DOCA (ALM) <span id="count-ALM">0</span></div>
@@ -167,829 +164,90 @@
         <div id="view-mapas" class="view-section">
             <div class="mc-layout">
                 <div class="mc-sidebar-list" id="mobileMapList">
-                    <div
-                        style="padding:15px; background:var(--bg-input); font-weight:bold; border-bottom:1px solid var(--border-color);">
+                    <div style="padding:15px; background:var(--bg-input); font-weight:bold; border-bottom:1px solid var(--border-color);">
                         Filtrar Mapas
-                        <input type="date" id="mapListDateFilter" onchange="renderMapList()"
-                            style="width:100%; margin-top:10px;">
+                        <input type="date" id="mapListDateFilter" onchange="renderMapList()" style="width:100%; margin-top:10px;">
                     </div>
                     <div class="mc-list-items" id="mapList" style="flex:1; overflow-y:auto;"></div>
-                    <div style="padding:10px;"><button onclick="createNewMap()" class="btn btn-save"
-                            style="width:100%; justify-content:center;">+ Novo Mapa Manual</button></div>
+                    <div style="padding:10px;"><button onclick="createNewMap()" class="btn btn-save" style="width:100%; justify-content:center;">+ Novo Mapa Manual</button></div>
                 </div>
-
                 <div style="flex:1; overflow-y:auto; padding-bottom:50px; position:relative;">
-
-                    <div id="mapEmptyState"
-                        style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted); text-align:center; padding-top:100px;">
+                    <div id="mapEmptyState" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted); text-align:center; padding-top:100px;">
                         <i class="fas fa-wind" style="font-size:3rem; margin-bottom:20px; opacity:0.3;"></i>
                         <h3 style="margin:0; font-weight:600;">Nenhum mapa cego por aqui...</h3>
-                        <p style="font-size:0.9rem; margin-top:5px; max-width:250px;">Selecione um item na lista ao lado
-                            ou crie um novo mapa.</p>
+                        <p style="font-size:0.9rem; margin-top:5px; max-width:250px;">Selecione um item na lista ao lado ou crie um novo mapa.</p>
                     </div>
-
-                    <div class="sheet" id="mapSheet" style="display:none;">
-                        <div id="divBanner" class="divergence-banner"
-                            style="display:none; background:#ffebee; color:#b71c1c; padding:10px; text-align:center; border:1px solid #b71c1c; margin-bottom:15px;">
-                            <i class="fas fa-exclamation-triangle"></i> <b>MAPA COM DIVERGÊNCIA</b><br>
-                            <span id="divBannerText" style="font-size:0.9rem;"></span>
-                            <div style="margin-top:5px;" id="divResolveBtn"></div>
-                        </div>
-                        <div class="sheet-header"
-                            style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
-                            <img src="https://www.alimentoswilson.com.br/imgs/logo-wilson.png" alt="Logo"
-                                class="logo-img" style="width:80px;" />
-                            <div class="title"
-                                style="flex:1; text-align:center; font-weight:bold; font-size:1.2rem; color:black;">MAPA
-                                CEGO DIGITAL</div>
-                            <div class="date-wrap" style="color:black;">Dia: <input type="date" id="mapDate"
-                                    style="color:black; width:auto;"></div>
-                        </div>
-                        <div class="table-responsive-wrapper">
-                            <table class="mc-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width:35%">Descrição dos Materiais</th>
-                                        <th style="width:12%">Qtd. NF</th>
-                                        <th style="width:12%">Qtd. Contada</th>
-                                        <th style="width:15%">Nota Fiscal</th>
-                                        <th style="width:20%">Fornecedor</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="mapBody"></tbody>
-                            </table>
-                        </div>
-                        <div class="controls" style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn btn-save" onclick="saveCurrentMap()">Salvar Alterações</button>
-                            <button class="btn btn-launch" onclick="launchMap()" id="btnLaunch">Lançar
-                                Definitivo</button>
-                            <button class="btn btn-edit" id="btnRequestEdit"
-                                style="display:none; background:#ff9800; color:white;"
-                                onclick="triggerRequest('edit')">Solicitar Edição</button>
-                            <div id="mapStatus"
-                                style="padding:8px 15px; border-radius:4px; font-weight:bold; margin-left:auto;">
-                                Rascunho</div>
-                        </div>
-                        <div class="extras" style="margin-top:20px; display:flex; gap:15px; flex-wrap:wrap;">
-                            <div style="flex:1;"><label style="font-weight:bold; color:black;">Setor:</label><input
-                                    type="text" id="mapSetor" class="cell"
-                                    style="width:100%; border-bottom:1px solid #ccc; background:#f9f9f9;"></div>
-                            <div style="width:150px;"><label style="font-weight:bold; color:black;">Placa:</label><input
-                                    id="mapPlaca" class="cell" type="text"
-                                    style="width:100%; border-bottom:1px solid #ccc;"></div>
-                            <div style="flex:1; display:flex; gap:10px; justify-content:flex-end;">
-                                <div style="text-align:center;"><button onclick="signMap('receb')" class="btn-sign">Ass.
-                                        Recebimento</button>
-                                    <div id="sigReceb" style="color:blue; font-weight:bold; font-size:0.8rem;"></div>
-                                </div>
-                                <div style="text-align:center;"><button onclick="signMap('conf')"
-                                        class="btn-sign-alm">Ass. Conferencia</button>
-                                    <div id="sigConf" style="color:red; font-weight:bold; font-size:0.8rem;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="sheet" id="mapSheet" style="display:none;"></div>
                 </div>
             </div>
         </div>
 
         <div id="view-materia-prima" class="view-section">
-            <div class="table-container">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="margin:0; color:var(--primary);"><i class="fas fa-weight-hanging"></i> Controle de Pesagem</h3>
-                    <input type="date" id="mpDateFilter" onchange="renderMateriaPrima()" style="width:auto;">
-                </div>
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Produto</th>
-                            <th>Placa</th>
-                            <th>Local</th>
-                            <th>Chegada</th>
-                            <th>Entrada</th>
-                            <th>Tara (Kg)</th>
-                            <th>Bruto (Kg)</th>
-                            <th>Líquido</th>
-                            <th>Peso NF</th>
-                            <th>DIF (Kg)</th>
-                            <th>DIF (%)</th>
-                            <th>Saída</th>
-                            <th>NF</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mpBody"></tbody>
-                </table>
-            </div>
-            <div class="fab" onclick="openManualWeighingModal()">+</div>
+            <div id="mpContent"></div>
         </div>
 
         <div id="view-carregamento" class="view-section">
-            <div class="table-container">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="margin:0; color:var(--text-main);"><i class="fas fa-dolly"></i> Expedição e Carregamento
-                    </h3>
-                    <input type="date" id="carrDateFilter" onchange="renderCarregamento()" style="width:auto;">
-                </div>
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>Motorista</th>
-                            <th>Cavalo</th>
-                            <th>Carreta(s)</th>
-                            <th>Tara</th>
-                            <th>Bruto</th>
-                            <th>Líquido</th>
-                            <th>Check-in</th>
-                            <th>Início</th>
-                            <th>Fim</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="carrBody"></tbody>
-                </table>
-            </div>
-            <div class="fab" onclick="openModalCarregamento()">+</div>
+            <div id="carregamentoContent"></div>
         </div>
 
         <div id="view-relatorios" class="view-section">
-            <div class="settings-card" style="max-width:1100px; margin:0 auto;">
-                <h3 style="margin-top:0; color:var(--text-main); margin-bottom:20px;">Relatórios Gerenciais</h3>
-                <div
-                    style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; background:var(--bg-input); padding:20px; border-radius:var(--radius-sm);">
-                    <div style="flex:1; min-width:200px;"><label
-                            style="font-weight:bold; font-size:0.8rem;">Tipo</label><select id="repType"
-                            style="width:100%;">
-                            <option value="patio">Fila de Caminhões</option>
-                            <option value="mapas">Mapas Cegos Lançados</option>
-                            <option value="carregamento">Carregamento</option>
-                            <option value="materia-prima">Controle de Pesagem</option>
-                            <option value="divergencias">Divergências</option>
-                        </select></div>
-                    <div><label style="font-weight:bold; font-size:0.8rem;">Início</label><input type="date"
-                            id="repDateStart" style="width:auto;"></div>
-                    <div><label style="font-weight:bold; font-size:0.8rem;">Fim</label><input type="date"
-                            id="repDateEnd" style="width:auto;"></div>
-                    <div style="flex:1; min-width:200px;"><label
-                            style="font-weight:bold; font-size:0.8rem;">Busca</label><input type="text"
-                            id="repSearchTerm" placeholder="Placa, NF, Forn..."></div>
-                    <button class="btn btn-save" onclick="generateAdvancedReport()"><i class="fas fa-search"></i>
-                        Filtrar</button>
-                    <button class="btn btn-edit" onclick="exportReportToPDF()"><i class="fas fa-file-pdf"></i>
-                        PDF</button>
-                </div>
-                <div id="repResultArea" style="margin-top:30px; overflow-x:auto;"></div>
-                <div id="repFooter" style="margin-top:20px; text-align:right; font-weight:bold; display:none;">Total:
-                    <span id="repTotalCount">0</span>
-                </div>
-            </div>
+            <div id="relatoriosContent"></div>
         </div>
 
         <div id="view-dashboard" class="view-section">
-            <div class="dashboard-container">
-                <div class="dash-control-bar">
-                    <h3 style="margin:0; color:var(--text-main); display:flex; align-items:center; gap:10px;">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </h3>
-
-                    <div class="filter-row">
-                        <div class="filter-group">
-                            <label>De</label>
-                            <input type="date" id="dashFrom">
-                        </div>
-                        <div class="filter-group">
-                            <label>Até</label>
-                            <input type="date" id="dashTo">
-                        </div>
-                        <div class="filter-group" style="flex:2;">
-                            <label>Produto / Busca</label>
-                            <input type="text" id="dashProduct" placeholder="Ex: AÇUCAR">
-                        </div>
-                        <div class="filter-group" style="flex:1;">
-                            <label>Placa</label>
-                            <input type="text" id="dashPlate" placeholder="ABC-1234">
-                        </div>
-                        <div class="filter-group">
-                            <label>Setor</label>
-                            <select id="dashSector">
-                                <option value="">(Todos)</option>
-                                <option value="Recebimento">Recebimento</option>
-                                <option value="Conferente">Conferência</option>
-                                <option value="Almoxarifado">Almoxarifado</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="action-row">
-                        <span style="font-size:0.9rem; font-weight:bold; color:#555;">Adicionar ao:</span>
-                        <div class="slot-buttons">
-                            <button class="btn-slot" onclick="addToSlot(0)">Slot 1</button>
-                            <button class="btn-slot" onclick="addToSlot(1)">Slot 2</button>
-                            <button class="btn-slot" onclick="addToSlot(2)">Slot 3</button>
-                            <button class="btn-slot" onclick="addToSlot(3)">Slot 4</button>
-                        </div>
-
-                        <button class="btn btn-save" onclick="saveDashboardLayout()"
-                            style="margin-left:auto; display:flex; align-items:center; gap:5px;">
-                            <i class="fas fa-save"></i> Salvar Layout
-                        </button>
-
-                        <button class="btn btn-edit" onclick="clearDashboard()"
-                            style="margin-left:10px;">Limpar</button>
-                    </div>
-                </div>
-
-                <div class="dash-grid">
-                    <div class="dash-card empty" id="slot-0">
-                        <div class="empty-state"><i class="fas fa-plus-circle"></i>
-                            <p>Slot 1 Vazio</p>
-                        </div>
-                    </div>
-                    <div class="dash-card empty" id="slot-1">
-                        <div class="empty-state"><i class="fas fa-plus-circle"></i>
-                            <p>Slot 2 Vazio</p>
-                        </div>
-                    </div>
-                    <div class="dash-card empty" id="slot-2">
-                        <div class="empty-state"><i class="fas fa-plus-circle"></i>
-                            <p>Slot 3 Vazio</p>
-                        </div>
-                    </div>
-                    <div class="dash-card empty" id="slot-3">
-                        <div class="empty-state"><i class="fas fa-plus-circle"></i>
-                            <p>Slot 4 Vazio</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="dashboardContent"></div>
         </div>
 
         <div id="view-cadastros" class="view-section">
-            <div class="settings-card" style="height: 100%; display: flex; flex-direction: column;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                    <h3 style="margin:0"><i class="fas fa-database"></i> Banco de Dados</h3>
-
-                    <div style="display:flex; gap:10px;">
-                        <select id="cadFilterType" onchange="renderCadastros()" style="padding:8px; border-radius:6px; background:var(--bg-input);">
-                            <option value="transportadora">Transportadoras</option>
-                            <option value="fornecedor">Fornecedores</option>
-                            <option value="motorista">Motoristas</option>
-                            <option value="placa">Placas</option>
-                            <option value="produto">Produtos</option>
-                            <option value="requests">Requisições (Pendentes)</option>
-                        </select>
-                        <input type="text" id="cadSearch" placeholder="Buscar..." onkeyup="renderCadastros()" style="padding:8px; border-radius:6px; width:200px; background:var(--bg-input);">
-                    </div>
-                </div>
-
-                <div style="flex:1; overflow-y:auto; position: relative;">
-                    <div style="position:absolute; top:0; right:0; padding:5px; pointer-events: none; text-align: right; width: 100%;">
-                        <span id="badgeReq" class="notification-badge" style="display:none; position:relative; background: orange;">0</span>
-                    </div>
-
-                    <table class="modern-table">
-                        <thead id="cadTableHead"></thead>
-                        <tbody id="cadTableBody"></tbody>
-                    </table>
-                    <div id="requestsList" style="padding:10px;"></div>
-                </div>
-            </div>
-            <div class="fab" onclick="openCadSelectModal()" title="Novo Cadastro">+</div>
+            <div id="cadastrosContent"></div>
         </div>
+
         <div id="view-produtos" class="view-section">
-            <div class="settings-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
-                    <div>
-                        <h3 style="margin:0; color:var(--text-main);"><i class="fas fa-cubes"></i> Catálogo de Produtos</h3>
-                        <small style="color:var(--text-muted);">Visualização geral e códigos de identificação</small>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="prodViewSearch" placeholder="Buscar produto..." onkeyup="renderProductsView()" style="padding:8px; border-radius:6px; width:250px; border:1px solid #ccc;">
-                    </div>
-                </div>
-
-                <div class="table-container" style="box-shadow:none; padding:0; border:none;">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Código (SKU)</th>
-                                <th>Nome do Produto</th>
-                                <th>Cargas Recebidas</th>
-                                <th>Fornecedores Recentes</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="prodViewBody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="productsContent"></div>
         </div>
+
         <div id="view-notificacoes" class="view-section">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; height:100%;">
-                <div class="settings-card">
-                    <h4><i class="fas fa-exclamation-circle"></i> Pendentes</h4>
-                    <div id="reqList"></div>
-                </div>
-                <div class="settings-card">
-                    <h4><i class="fas fa-history"></i> Histórico</h4>
-                    <div id="historyList"></div>
-                </div>
-            </div>
+            <div id="notificacoesContent"></div>
         </div>
 
         <div id="view-perfil" class="view-section">
-            <h2 style="margin-bottom:20px;">Área do Usuário</h2>
-            <div id="profileContent"></div>
-        </div>
-
-        <!-- CONTAINER PARA MÓDULOS CUSTOMIZADOS -->
-        <div id="view-custom-module" class="view-section">
-            <div id="customModuleContainer"></div>
+            <div id="profileContent" style="padding:20px;"></div>
         </div>
 
         <div id="view-configuracoes" class="view-section">
-            <h2 style="margin-bottom:20px;">Configurações</h2>
+            <div id="adminOnlyConfig" style="display:none; margin-bottom: 20px;">
+                <div id="customModulesAdmin"></div>
+            </div>
             <div class="settings-grid">
                 <div class="settings-card">
-                    <h4><i class="fas fa-palette"></i> Visual</h4>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><strong>Modo Escuro</strong></div>
-                        <label class="switch"><input type="checkbox" id="darkModeToggle"
-                                onchange="toggleDarkMode()"><span class="slider"></span></label>
-                    </div>
-                    <div
-                        style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                        <div>
-                            <strong>Modo Rápido</strong>
-                            <div style="font-size:0.8rem; color:var(--text-muted);">Remove animações (PC Lento)</div>
-                        </div>
-                        <label class="switch"><input type="checkbox" id="fastModeToggle" onchange="toggleFastMode()"><span
-                                class="slider"></span></label>
+                    <h4><i class="fas fa-database"></i> Backup e Sincronização</h4>
+                    <p style="font-size:0.85rem; color:#666; margin-bottom:15px;">Gerencie os dados do sistema e realize backups manuais.</p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-edit" onclick="exportData()"><i class="fas fa-download"></i> Exportar JSON</button>
+                        <button class="btn btn-edit" onclick="importData()"><i class="fas fa-upload"></i> Importar JSON</button>
+                        <button class="btn btn-edit" style="color:red; border-color:red;" onclick="resetSystem()"><i class="fas fa-trash-alt"></i> Resetar Tudo</button>
                     </div>
                 </div>
                 <div class="settings-card">
-                    <h4><i class="fas fa-bell"></i> Sistema</h4>
-                    <div style="display:flex; gap:10px;"><button class="btn btn-save"
-                            onclick="manualRequestPermission()">Ativar Notificações</button><button class="btn btn-edit"
-                            onclick="playBeep()">Testar Som</button></div>
-                    
-                    <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                        <label style="font-weight:bold; font-size:0.8rem;">IP do Servidor (Configuração de Rede)</label>
-                        <div style="display:flex; gap:5px; margin-top:5px;">
-                            <input type="text" id="cfgServerIP" placeholder="Ex: 192.168.0.100" class="form-input-styled">
-                            <button class="btn btn-save" onclick="saveServerIP()">Salvar</button>
-                        </div>
-                        <div style="font-size:0.75rem; color:#888; margin-top:3px;">Necessário para o Electron sincronizar em rede.</div>
-                    </div>
-                </div>
-                <div class="settings-card">
-                    <h4><i class="fas fa-database"></i> Dados</h4>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <button class="btn btn-edit" onclick="backupData()">Backup</button>
-                        <button class="btn btn-edit"
-                            onclick="document.getElementById('fileRestore').click()">Restaurar</button>
-                        <input type="file" id="fileRestore" style="display:none" onchange="restoreData(this)"
-                            accept=".json">
-                    </div>
-                    <button class="btn btn-edit"
-                        style="color:var(--status-danger); border-color:var(--status-danger); width:100%; margin-top:15px;"
-                        onclick="clearAllData()">RESETAR DADOS</button>
+                    <h4><i class="fas fa-desktop"></i> Preferências de Exibição</h4>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()"> Modo Escuro (Dark Mode)
+                    </label>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="fastModeToggle" onchange="toggleFastMode()"> Modo Desempenho (Sem Animações)
+                    </label>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="modalTruck" class="modal-overlay">
-        <div class="modal-box" style="width: 600px;">
-            <h3>Nova Entrada de Veículo</h3>
-            
-            <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.8rem; margin-bottom:15px; display:none;" id="entryWarningBox">
-                <i class="fas fa-exclamation-triangle"></i> <b>Atenção:</b> Dados não cadastrados (marcados em amarelo). Ao salvar, será gerada uma <b>Requisição</b>.
-            </div>
-
-            <div class="form-grid">
-                <div class="form-full">
-                    <label>Fornecedor</label>
-                    <div style="position:relative;">
-                        <input type="text" id="inForn" class="form-input-styled" list="dlForn" placeholder="Digite para buscar..." oninput="filterChain('fornecedor')" autocomplete="off">
-                        <datalist id="dlForn"></datalist>
-                    </div>
-                </div>
-
-                <div class="form-full">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label>Transportadora</label>
-                        <label style="font-size:0.8rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; gap:5px;">
-                            <input type="checkbox" id="chkUseCarrier" onchange="toggleCarrierInput()"> Utilizar Transportadora
-                        </label>
-                    </div>
-                    <div style="position:relative;">
-                        <input type="text" id="inTransp" class="form-input-styled" list="dlTransp" placeholder="Selecione (Opcional)..." oninput="filterChain('transportadora')" autocomplete="off" disabled style="background-color: #f1f5f9; cursor: not-allowed;">
-                        <datalist id="dlTransp"></datalist>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Motorista</label>
-                    <div style="position:relative;">
-                        <input type="text" id="inMot" class="form-input-styled" list="dlMot" placeholder="Nome..." oninput="filterChain('motorista')" autocomplete="off">
-                        <datalist id="dlMot"></datalist>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Placa</label>
-                    <div style="position:relative;">
-                        <input type="text" id="inPlaca" class="form-input-styled" list="dlPlaca" placeholder="ABC-1234" maxlength="8" oninput="filterChain('placa')" autocomplete="off">
-                        <datalist id="dlPlaca"></datalist>
-                    </div>
-                </div>
-
-                <div class="form-full">
-                    <label>Destino / Setor</label>
-                    <select id="addDestino" class="form-input-styled">
-                        <option value="DOCA">Doca (Recebimento)</option>
-                        <option value="GAVA">Gava</option>
-                        <option value="MANUTENCAO">Manutenção</option>
-                        <option value="INFRA">Infraestrutura</option>
-                        <option value="PESAGEM">Pesagem Avulsa</option>
-                        <option value="LAB">Laboratório</option>
-                        <option value="CD">CD (Logística)</option>
-                        <option value="OUT">Outros</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                <label>Produtos / Notas</label>
-                <div style="display:flex; gap:5px; margin-bottom:5px; position:relative;">
-                    <input type="text" id="tmpNF" placeholder="NF" style="width:30%" class="form-input-styled">
-                    <div style="flex:1; position:relative;">
-                        <input type="text" id="tmpProd" placeholder="Produto (Busca ou Novo)" class="form-input-styled" list="prodListSuggestions" oninput="checkProductInput()">
-                        <datalist id="prodListSuggestions"></datalist>
-                    </div>
-                    <button class="btn btn-save" onclick="addTmpItem()">+</button>
-                </div>
-                <ul id="tmpList" style="list-style:none; padding:0; font-size:0.85rem; color:#555;"></ul>
-            </div>
-
-            <div style="display:flex; gap:15px; margin-top:10px;">
-                <label class="checkbox-container"><input type="checkbox" id="chkBalan"> Vai pesar?</label>
-                <label class="checkbox-container"><input type="checkbox" id="chkLaudo"> Sem Laudo</label>
-            </div>
-
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalTruck').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" id="btnSaveTruck" onclick="saveTruckAndMap()">Registrar Entrada</button>
-                <button class="btn btn-save" id="btnReqTruck" style="display:none; background:#d97706;" onclick="submitComplexRequest()">Solicitar Requisição & Entrar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalUnifiedApproval" class="modal-overlay" style="z-index: 8000;">
-    <div class="modal-box" style="width: 700px; max-height:90vh; overflow-y:auto;">
-        <div class="modal-header-styled">
-            <h3><i class="fas fa-tasks"></i> Análise de Requisição</h3>
-            <button class="btn btn-edit btn-small" onclick="document.getElementById('modalUnifiedApproval').style.display='none'" style="border:none;"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">
-            Complete os dados faltantes para aprovar. Os campos em <b style="background:#fff9c4; padding:0 3px;">amarelo</b> foram preenchidos na requisição.
-        </p>
-
-        <input type="hidden" id="appReqId">
-
-        <div id="approvalContainer">
-            </div>
-
-        <div class="modal-footer space-between">
-            <button class="btn btn-edit" style="color:red; border-color:red;" onclick="rejectUnifiedRequest()">Rejeitar Requisição</button>
-            <button class="btn btn-save" onclick="confirmUnifiedApproval()">✅ Aprovar e Cadastrar Tudo</button>
-        </div>
-    </div>
-</div>
-
-    <div id="modalCadSelect" class="modal-overlay" style="z-index:6000;">
-        <div class="modal-box" style="width:500px;">
-            <div class="modal-header-styled">
-                <h3>Novo Cadastro</h3>
-                <button class="btn btn-edit btn-small" onclick="document.getElementById('modalCadSelect').style.display='none'" style="border:none; padding:5px 10px;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <p style="color:var(--text-muted); text-align:center; margin-bottom:10px;">O que você deseja cadastrar?</p>
-            
-            <div class="cad-select-grid">
-                <div class="cad-select-card" onclick="openCadModal('fornecedor')">
-                    <i class="fas fa-industry"></i>
-                    Fornecedor
-                </div>
-                <div class="cad-select-card" onclick="openCadModal('transportadora')">
-                    <i class="fas fa-truck"></i>
-                    Transportadora
-                </div>
-                <div class="cad-select-card" onclick="openCadModal('motorista')">
-                    <i class="fas fa-user-friends"></i>
-                    Motorista
-                </div>
-                <div class="cad-select-card" onclick="openCadModal('placa')">
-                    <i class="fas fa-closed-captioning"></i>
-                    Placa / Veículo
-                </div>
-                <div class="cad-select-card" onclick="openCadModal('produto')">
-                    <i class="fas fa-box-open"></i>
-                    Produto
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalCadForm" class="modal-overlay" style="z-index:6001;">
-        <div class="modal-box">
-            <h3 id="cadFormTitle">Novo Registro</h3>
-            <input type="hidden" id="cadFormType">
-            <input type="hidden" id="cadFormId">
-            <div id="cadFormFields" class="form-grid" style="margin-bottom:20px;"></div>
-            <div style="text-align:right;">
-                <button class="btn btn-edit"
-                    onclick="document.getElementById('modalCadForm').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" onclick="saveOfficialCadastro()">Salvar Oficial</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalProvisorio" class="modal-overlay" style="z-index:7000;">
-        <div class="modal-box" style="border-top: 5px solid #f59e0b;">
-            <h3 style="color:#d97706"><i class="fas fa-hard-hat"></i> Cadastro Provisório</h3>
-            <p style="font-size:0.9rem; color:#666;">Use apenas se a empresa não existir no sistema.</p>
-
-            <input type="hidden" id="provType">
-            <div class="form-group">
-                <label>Nome / Descrição (Provisório)</label>
-                <input type="text" id="provName" class="form-input-styled">
-            </div>
-            <div class="form-group">
-                <label>Observação (Opcional)</label>
-                <input type="text" id="provObs" class="form-input-styled" placeholder="Ex: Motorista novo...">
-            </div>
-
-            <div style="text-align:right;">
-                <button class="btn btn-edit"
-                    onclick="document.getElementById('modalProvisorio').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" style="background:#d97706;" onclick="confirmProvisory()">Gerar
-                    Requisição</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalEditTruck" class="modal-overlay">
-        <div class="modal-box" style="width: 600px;">
-            <div class="modal-header-styled">
-                <h3><i class="fas fa-edit"></i> Editar Veículo</h3>
-                <button class="btn btn-edit btn-small"
-                    onclick="document.getElementById('modalEditTruck').style.display='none'"
-                    style="border:none; padding: 5px 10px;"><i class="fas fa-times"></i></button>
-            </div>
-            <input type="hidden" id="editTruckId">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label">Placa</label>
-                    <input type="text" id="editTruckPlaca" class="form-input-styled">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Setor</label>
-                    <select id="editTruckDestino" class="form-input-styled">
-                        <option value="DOCA">DOCA</option>
-                        <option value="GAVA">GAVA</option>
-                        <option value="MANUTENCAO">MANUTENÇÃO</option>
-                        <option value="INFRA">INFRAESTRUTURA</option>
-                        <option value="PESAGEM">PESAGEM</option>
-                        <option value="LAB">LABORATÓRIO</option>
-                        <option value="SST">SST</option>
-                        <option value="CD">CD</option>
-                        <option value="COMPRAS">COMPRAS</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group" style="margin-top:10px;">
-                <label>Produtos</label>
-                <div style="display:flex; gap:5px;">
-                    <input id="editTmpNF" placeholder="NF" style="width:30%" class="form-input-styled">
-                    <input id="editTmpProd" placeholder="Produto" style="flex:1" class="form-input-styled">
-                    <button class="btn btn-save" onclick="addEditTmpItem()">+</button>
-                </div>
-                <ul id="editTmpList" class="product-list"></ul>
-            </div>
-            <div class="form-group"><label><input type="checkbox" id="editTruckLaudo"> Com Laudo?</label></div>
-            <div style="display:flex; justify-content:space-between; margin-top:20px;">
-                <button onclick="deleteTruck()" class="btn btn-edit"
-                    style="background:red; border:none; color:white;">Excluir</button>
-                <div>
-                    <button class="btn btn-edit"
-                        onclick="document.getElementById('modalEditTruck').style.display='none'">Cancelar</button>
-                    <button class="btn btn-save" onclick="saveEditTruck()">Salvar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalFirstAccess" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-            <h3>Criar Nova Senha</h3>
-            <p>Seu primeiro acesso requer a troca de senha.</p>
-            <input type="password" id="firstNewPass" placeholder="Nova Senha" class="form-input-styled" style="margin-bottom:10px;">
-            <input type="password" id="firstNewPass2" placeholder="Confirmar Senha" class="form-input-styled" style="margin-bottom:10px;">
-            <button class="btn btn-save" style="width:100%;" onclick="confirmFirstAccessChange()">Confirmar</button>
-        </div>
-    </div>
-
-    <div id="ctxMenu" class="context-menu" style="display:none;"></div>
-    <div id="ctxMenuMP" class="context-menu" style="display:none;"></div>
-    <div id="ctxMenuTruck" class="context-menu" style="display:none;"></div>
-    <div id="ctxMenuCarr" class="context-menu" style="display:none;"></div>
-    <div id="ctxMenuCad" class="context-menu" style="display:none;"></div>
-
-
-    <div id="modalDeleteConfirm" class="modal-overlay" style="z-index: 9000;">
-        <div class="modal-box" style="width: 450px; text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <i class="fas fa-trash-alt" style="font-size: 3rem; color: #ef4444; background: #fee2e2; padding: 20px; border-radius: 50%;"></i>
-            </div>
-            <h3>Excluir Registro</h3>
-            <p style="color: #666; margin-bottom: 20px;">Como deseja excluir este veículo?</p>
-            
-            <div class="delete-options-container">
-                <div class="del-option selected" id="optQueue" onclick="selectDeleteOption('queue')">
-                    <i class="fas fa-list-ul"></i>
-                    <strong>Apenas da Fila</strong>
-                    <div style="font-size: 0.75rem; color: #888;">Remove do painel, mas mantém histórico e mapa.</div>
-                </div>
-                <div class="del-option" id="optGeneral" onclick="selectDeleteOption('general')">
-                    <i class="fas fa-bomb"></i>
-                    <strong>Excluir Tudo</strong>
-                    <div style="font-size: 0.75rem; color: #888;">Apaga do Pátio, Mapa Cego e Pesagem. Irreversível.</div>
-                </div>
-            </div>
-
-            <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalDeleteConfirm').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" style="background-color: #ef4444;" onclick="executeDeleteTruck()">Confirmar Exclusão</button>
-            </div>
-        </div>
-    </div>
-    <div id="modalReportDetail" class="modal-overlay" style="z-index: 9500;">
-        <div class="modal-box" style="width: 600px; max-width: 95%;">
-            <div class="modal-header-styled">
-                <h3><i class="fas fa-info-circle"></i> Detalhes do Registro</h3>
-                <button class="btn btn-edit btn-small" onclick="document.getElementById('modalReportDetail').style.display='none'" style="border:none;"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="repDetailContent" style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6;"></div>
-
-            <div id="repDetailActions" style="text-align: right; border-top: 1px solid #eee; padding-top: 15px;"></div>
-        </div>
-    </div>
-<div id="modalManualWeighing" class="modal-overlay" style="z-index: 7500;">
-        <div class="modal-box" style="width: 600px;">
-            <h3>Nova Pesagem Manual</h3>
-            
-            <div style="background:#fff3cd; color:#856404; padding:10px; border-radius:6px; font-size:0.8rem; margin-bottom:15px; display:none;" id="mwWarningBox">
-                <i class="fas fa-exclamation-triangle"></i> <b>Atenção:</b> Dados não cadastrados. Será gerada uma <b>Requisição</b>.
-            </div>
-
-            <div class="form-grid">
-                <div class="form-full">
-                    <label>Fornecedor</label>
-                    <div style="position:relative;">
-                        <input type="text" id="mwForn" class="form-input-styled" list="dlForn" placeholder="Busque o fornecedor..." oninput="filterWeighingChain('fornecedor')" autocomplete="off">
-                        </div>
-                </div>
-
-                <div class="form-full">
-                    <label>Produto</label>
-                    <div style="position:relative;">
-                        <input type="text" id="mwProd" class="form-input-styled" list="prodListSuggestions" placeholder="Ex: ACUCAR..." oninput="filterWeighingChain('produto')" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Placa</label>
-                    <div style="position:relative;">
-                        <input type="text" id="mwPlaca" class="form-input-styled" list="dlPlaca" placeholder="ABC-1234" maxlength="8" oninput="filterWeighingChain('placa')" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Motorista (Opcional)</label>
-                    <div style="position:relative;">
-                        <input type="text" id="mwMot" class="form-input-styled" list="dlMot" placeholder="Nome..." oninput="filterWeighingChain('motorista')" autocomplete="off">
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
-                <label>Dados da Nota (Opcional)</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="mwNF" class="form-input-styled" placeholder="Nº NF" style="width: 120px;">
-                    <input type="number" id="mwPesoNF" class="form-input-styled" placeholder="Peso NF (Kg)">
-                </div>
-            </div>
-
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalManualWeighing').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" id="btnSaveMW" onclick="saveManualWeighing()">Lançar Pesagem</button>
-                <button class="btn btn-save" id="btnReqMW" style="display:none; background:#d97706;" onclick="submitWeighingRequest()">Solicitar & Lançar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalEditMP" class="modal-overlay">
-        <div class="modal-box">
-            <h3><i class="fas fa-edit"></i> Editar Dados da Pesagem</h3>
-            <input type="hidden" id="editMPId">
-            <div class="form-group">
-                <label>Empresa</label>
-                <input id="editMPEmpresa" class="form-input-styled">
-            </div>
-            <div class="form-group">
-                <label>Placa</label>
-                <input id="editMPPlaca" class="form-input-styled">
-            </div>
-            <div class="form-group">
-                <label>Produto Principal</label>
-                <input id="editMPProduto" class="form-input-styled">
-            </div>
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalEditMP').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" onclick="saveEditMP()">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalNoteMP" class="modal-overlay">
-        <div class="modal-box">
-            <h3><i class="fas fa-sticky-note"></i> Observação</h3>
-            <input type="hidden" id="noteMPId">
-            <textarea id="noteMPText" class="form-input-styled" rows="5" placeholder="Digite a observação aqui..."></textarea>
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn btn-edit" onclick="document.getElementById('modalNoteMP').style.display='none'">Cancelar</button>
-                <button class="btn btn-save" onclick="saveNoteMP()">Salvar Nota</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalMultiNF" class="modal-overlay" style="z-index: 9600;">
-        <div class="modal-box">
-            <h3><i class="fas fa-list-ol"></i> Lista de Cargas</h3>
-            <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">Este veículo possui múltiplas notas fiscais/produtos.</p>
-            <ul id="multiNFList" class="product-list" style="max-height: 300px;"></ul>
-            <div style="text-align:right; margin-top:15px;">
-                <button class="btn btn-save" onclick="document.getElementById('modalMultiNF').style.display='none'">Fechar</button>
-            </div>
-        </div>
-    </div>
-    <div id="modalProdCode" class="modal-overlay" style="z-index: 9999;">
-        <div class="modal-box" style="width: 350px; text-align: center; padding-top: 40px;">
-            <div style="position:absolute; top:10px; right:10px;">
-                <button class="btn-icon-remove" onclick="document.getElementById('modalProdCode').style.display='none'"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <i class="fas fa-barcode" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 15px;"></i>
-            
-            <h4 id="popProdName" style="margin:0; color:var(--text-muted); font-size:0.9rem; text-transform:uppercase;">NOME PRODUTO</h4>
-            
-            <div style="margin: 15px 0; background: #f1f5f9; padding: 15px; border-radius: 8px; border: 2px dashed #cbd5e1;">
-                <span style="display:block; font-size: 0.8rem; color: #64748b; font-weight:bold;">CÓDIGO DE SISTEMA</span>
-                <span id="popProdCode" style="display:block; font-size: 2.5rem; font-weight: 800; color: var(--primary); letter-spacing: 2px;">0000</span>
-            </div>
-
-            <button class="btn btn-edit" style="width:100%" onclick="document.getElementById('modalProdCode').style.display='none'">Fechar</button>
-        </div>
-    </div>
-    <div id="modalUnifiedApproval" class="modal-overlay" style="z-index: 8000;">
-    </div>
-    <!-- ========================================================================== -->
-    <!--  WILSON CORE 2.4.3 - SISTEMA MODULARIZADO                                -->
-    <!--  Carrega todos os módulos na ordem correta de dependência                -->
-    <!-- ========================================================================== -->
-
-    <!-- CAMADA 1: Fundação (Validações) -->
+    <!-- Scripts de Módulos -->
     <script src="../js/modules/validators.js"></script>
-
-    <!-- CAMADA 2: Infraestrutura (Config e Dados) -->
     <script src="../js/modules/config.js"></script>
     <script src="../js/modules/data-sync.js"></script>
-
-    <!-- CAMADA 3: Comunicação (Notificações) -->
     <script src="../js/modules/notifications.js"></script>
-
-    <!-- CAMADA 4: Interface (Navegação e UI) -->
     <script src="../js/modules/ui-navigation.js"></script>
     <script src="../js/modules/custom-modules.js"></script>
-
-    <!-- CAMADA 5: Regras de Negócio -->
     <script src="../js/modules/patio.js"></script>
     <script src="../js/modules/cadastros.js"></script>
     <script src="../js/modules/mapas-cegos.js"></script>
@@ -999,69 +257,36 @@
     <script src="../js/modules/dashboard.js"></script>
     <script src="../js/modules/users.js"></script>
     <script src="../js/modules/products.js"></script>
-
-    <!-- CAMADA 6: Orquestração (Inicialização) -->
     <script src="../js/modules/main.js"></script>
 
-    <!-- ========================================================================== -->
     <script>
-        // HACK: Electron define 'module' globalmente, o que confunde o carregador do Socket.IO
-        // Escondemos o module temporariamente para garantir que o Socket.IO carregue corretamente
+        // HACK: Electron define 'module' globalmente
         if (typeof module === 'object') {
             window.module = module;
             module = undefined;
         }
-    </script>
 
-    <script>
-        // Carrega dinamicamente o script do Socket.IO vindo do servidor
         const socketScript = document.createElement('script');
         socketScript.src = `${API_BASE_URL}/socket.io/socket.io.js`;
-        
         socketScript.onload = function() {
-            console.log("✅ Biblioteca Socket.IO carregada do servidor.");
-            // Restaura o module se necessário
             if (window.module) module = window.module;
-            
             initRealTimeSystem(); 
         };
-        
-        socketScript.onerror = function() {
-            console.error("❌ Não foi possível encontrar o servidor em " + API_BASE_URL);
-            document.getElementById('socketStatus').innerHTML = 'Erro Conexão';
-            
-            // Restaura o module mesmo com erro
-            if (window.module) module = window.module;
-        };
-        
         document.head.appendChild(socketScript);
-    </script>
-    
-    <script>
-        // Funções visuais de carregamento
+
         function showLoading() { document.getElementById("loading-screen").classList.remove("hidden"); }
         function hideLoading() { document.getElementById("loading-screen").classList.add("hidden"); }
-        window.onload = () => { showLoading(); setTimeout(hideLoading, 1500); };
-
-        if (window.require) {
-            const { ipcRenderer } = require('electron');
-            document.getElementById('minBtn').addEventListener('click', () => ipcRenderer.send('minimize-app'));
-            document.getElementById('maxBtn').addEventListener('click', () => ipcRenderer.send('maximize-app'));
-            document.getElementById('closeBtn').addEventListener('click', () => ipcRenderer.send('close-app'));
-        }
-
-        // --- CORREÇÃO DO FETCH (API) ---
-        // Sobrescrevemos o fetch global para sempre usar o URL do servidor
-        // Isso resolve o problema de "realizar ação" em outros PCs
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options) {
-            // Se a URL for apenas "/api/...", adiciona o IP do servidor antes
-            if (url.startsWith('/')) {
-                url = API_BASE_URL + url;
+        window.onload = () => { 
+            showLoading(); 
+            setTimeout(hideLoading, 1500);
+            
+            // Inicialização extra para admin
+            if (isAdmin) {
+                const adminDiv = document.getElementById('adminOnlyConfig');
+                if (adminDiv) adminDiv.style.display = 'block';
+                if (typeof renderCustomModulesAdmin === 'function') renderCustomModulesAdmin();
             }
-            return originalFetch(url, options);
         };
     </script>
 </body>
-
 </html>
