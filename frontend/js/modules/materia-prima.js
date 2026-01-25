@@ -161,16 +161,46 @@ function openManualMPModal() {
 function saveManualMP() {
     const pl = document.getElementById('manMPPlaca').value.toUpperCase();
     const pr = document.getElementById('manMPProd').value;
+    const emp = document.getElementById('manMPEmp').value;
+    
     if (!pl || !pr) return alert("Placa e Produto são obrigatórios.");
+
+    // Sistema de Requisições para Pesagem Manual
+    const prodExists = productsData.some(p => p.nome.toUpperCase() === pr.toUpperCase());
+    const empExists = suppliersData.some(s => s.nome.toUpperCase() === emp.toUpperCase());
+
+    if (!prodExists || !empExists) {
+        const missing = [];
+        if (!prodExists) missing.push(`Produto: ${pr}`);
+        if (!empExists) missing.push(`Empresa: ${emp}`);
+        
+        if (confirm(`As seguintes informações não estão cadastradas:\n\n${missing.join('\n')}\n\nDeseja enviar uma requisição para o administrador cadastrar?`)) {
+            requests.push({
+                id: Date.now(),
+                user: loggedUser.username,
+                target: 'Admin',
+                type: 'CADASTRO',
+                msg: `Solicitação de cadastro manual na Pesagem:\n${missing.join('\n')}`,
+                status: 'pending',
+                date: getBrazilTime()
+            });
+            alert("Requisição enviada ao administrador.");
+        }
+    }
+
     const id = 'MAN_' + Date.now();
     const d = document.getElementById('mpDateFilter').value || getBrazilTime().split('T')[0];
+    
     mpData.push({
-        id: id, date: d, produto: pr, empresa: document.getElementById('manMPEmp').value,
+        id: id, date: d, produto: pr, empresa: emp,
         placa: pl, local: 'MANUAL', chegada: getBrazilTime(), entrada: getBrazilTime(),
         tara: parseFloat(document.getElementById('manMPTara').value) || 0, bruto: 0, liq: 0, pesoNF: 0, difKg: 0, difPerc: 0,
         nf: document.getElementById('manMPNF').value, notes: '', isManual: true
     });
-    saveAll(); renderMateriaPrima(); document.getElementById('modalManualMP').style.display = 'none';
+    
+    saveAll(); 
+    renderMateriaPrima(); 
+    document.getElementById('modalManualMP').style.display = 'none';
 }
 
 function openEditMPModal() { 

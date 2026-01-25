@@ -169,11 +169,22 @@ function renderRows(m) {
     const locked = m.launched && !m.forceUnlock;
     const isMobile = window.innerWidth <= 768;
 
-    // Filtramos as linhas: se a linha estiver totalmente vazia, nós a ocultamos (Geral)
-    // Exceto se o mapa for novo e não tiver nenhuma linha com dados, mostramos pelo menos uma vazia para começar
-    let rowsToRender = m.rows.filter(r => r.desc || r.nf || r.qty || r.qty_nf || r.forn);
-    if (rowsToRender.length === 0 && !locked) {
-        rowsToRender = [m.rows[0]]; // Mostra a primeira linha mesmo vazia se for edição
+    // Garantir que o mapa tenha pelo menos 8 linhas internamente se for novo/manual
+    if (!locked && m.rows.length < 8) {
+        for (let i = m.rows.length; i < 8; i++) {
+            m.rows.push({ id: m.id + '_' + Date.now() + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} });
+        }
+    }
+
+    // Filtramos as linhas para exibição:
+    // No Desktop: Mostramos todas as linhas (incluindo as 8 padrão vazias)
+    // No Mobile: Ocultamos as vazias para economizar espaço
+    let rowsToRender = m.rows;
+    if (isMobile) {
+        rowsToRender = m.rows.filter(r => r.desc || r.nf || r.qty || r.qty_nf || r.forn);
+        if (rowsToRender.length === 0 && !locked) {
+            rowsToRender = [m.rows[0]]; 
+        }
     }
 
     rowsToRender.forEach(r => {
@@ -256,8 +267,33 @@ function removeMapRow(rowId) {
     const m = mapData.find(x => x.id === currentMapId);
     if (!m) return;
     
-    if (confirm('Deseja realmente remover esta linha?')) {
+    // Regra mínima: Todo caminhão deve possuir no mínimo 1 produto
+    const activeRows = m.rows.filter(r => r.desc || r.nf || r.qty || r.qty_nf || r.forn);
+    if (activeRows.length <= 1 && m.rows.find(r => r.id === rowId && (r.desc || r.nf))) {
+        return alert('Operação não permitida: O caminhão deve possuir no mínimo 1 produto cadastrado.');
+    }
+
+    if (confirm('Deseja realmente remover esta linha? Esta ação refletirá em todo o sistema.')) {
+        const rowToRemove = m.rows.find(r => r.id === rowId);
+        const productName = rowToRemove ? rowToRemove.desc : '';
+        
         m.rows = m.rows.filter(r => r.id !== rowId);
+
+        // SINCRONIZAÇÃO EM CASCATA: Remover do Pátio e Pesagem
+        const truck = patioData.find(t => t.id === m.id);
+        if (truck && truck.cargas) {
+            truck.cargas.forEach(carga => {
+                if (carga.produtos) {
+                    carga.produtos = carga.produtos.filter(p => p.nome !== productName);
+                }
+            });
+        }
+
+        const mp = mpData.find(x => x.id === m.id);
+        if (mp && mp.produtos) {
+            mp.produtos = mp.produtos.filter(p => p.nome !== productName);
+        }
+
         saveAll();
         renderRows(m);
     }
@@ -267,7 +303,7 @@ function addMapRow() {
     const m = mapData.find(x => x.id === currentMapId);
     if (!m) return;
     
-    const newId = m.id + '_' + m.rows.length;
+    const newId = m.id + '_' + Date.now(); // ID mais único
     m.rows.push({ id: newId, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} });
     saveAll();
     renderRows(m);

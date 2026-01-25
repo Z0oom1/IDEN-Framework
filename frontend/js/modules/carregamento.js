@@ -76,9 +76,37 @@ function saveCarregamento() {
     const cav = document.getElementById('carrCavalo').value; 
     const arr = []; 
     document.querySelectorAll('.carrCarretaInput').forEach(i => { if (i.value) arr.push(i.value) }); 
+    
+    if (!mot || !cav) return alert("Motorista e Cavalo são obrigatórios.");
+
+    // Sistema de Requisições para Carregamento Manual
+    const motExists = driversData.some(d => d.nome.toUpperCase() === mot.toUpperCase());
+    const plateExists = platesData.some(p => p.placa.toUpperCase() === cav.toUpperCase());
+
+    if (!motExists || !plateExists) {
+        const missing = [];
+        if (!motExists) missing.push(`Motorista: ${mot}`);
+        if (!plateExists) missing.push(`Placa (Cavalo): ${cav}`);
+        
+        if (confirm(`As seguintes informações não estão cadastradas:\n\n${missing.join('\n')}\n\nDeseja enviar uma requisição para o administrador cadastrar?`)) {
+            requests.push({
+                id: Date.now(),
+                user: loggedUser.username,
+                target: 'Admin',
+                type: 'CADASTRO',
+                msg: `Solicitação de cadastro manual no Carregamento:\n${missing.join('\n')}`,
+                status: 'pending',
+                date: getBrazilTime()
+            });
+            alert("Requisição enviada ao administrador.");
+        }
+    }
+
+    const d = document.getElementById('carrDateFilter').value || getBrazilTime().split('T')[0];
+
     carregamentoData.push({ 
         id: Date.now().toString(), 
-        date: today, 
+        date: d, 
         motorista: mot, 
         cavalo: cav, 
         carretas: arr, 
