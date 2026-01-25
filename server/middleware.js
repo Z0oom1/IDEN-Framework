@@ -92,7 +92,7 @@ export function logActivityMiddleware(action, entity) {
     // Capture original send function
     const originalSend = res.send;
 
-    res.send = function (data) {
+    res.send = async function (data) {
       // Log activity after response
       if (req.user) {
         const { logActivity } = await import('./database.js');
