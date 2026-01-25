@@ -582,14 +582,17 @@ function renderPatio() {
 
         const inWeighing = mpData.some(m => m.id === c.id);
         const weighBadge = inWeighing ? '<span class="weigh-badge" title="Já existe na pesagem"><i class="fas fa-weight"></i></span>' : '';
-        const laudoBadge = c.comLaudo ? '<span class="laudo-badge" title="Tem Laudo"><i class="fas fa-flask"></i></span>' : '';
+        const laudoBadge = c.comLaudo 
+            ? '<span class="laudo-badge-ok" title="Com Laudo"><i class="fas fa-check-circle"></i> LAUDO OK</span>' 
+            : '<span class="laudo-badge-critical" title="Sem Laudo"><i class="fas fa-exclamation-triangle"></i> SEM LAUDO</span>';
 
         card.innerHTML = `
             <div class="card-basic" style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <i class="fas fa-caret-right expand-icon" style="color:#aaa; transition: transform 0.2s;"></i>
                     <div>
-                        <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${weighBadge} ${laudoBadge}</div>
+                        <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${weighBadge}</div>
+                        <div style="margin: 4px 0;">${laudoBadge}</div>
                         <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
                         <div class="sector-tag">${c.localSpec}</div>
                     </div>
@@ -682,6 +685,8 @@ function openTruckContextMenu(x, y, id) {
 }
 
 function confirmDeleteTruck(id) {
+    if (!checkPermission('patio', 'delete')) return alert('Você não tem permissão para excluir veículos.');
+    
     contextTruckId = id;
     deleteOptionSelected = 'queue';
     document.querySelectorAll('.del-option').forEach(el => el.classList.remove('selected'));

@@ -2,6 +2,30 @@
 //          MÓDULO DE USUÁRIOS (GESTÃO E PERFIL)
 // ===================================================================================
 
+let currentEditingProfile = null;
+let systemPermissions = JSON.parse(localStorage.getItem('system_permissions') || '{}');
+let adminLogs = JSON.parse(localStorage.getItem('admin_logs') || '[]');
+
+// Definição dos módulos e permissões granulares
+const APP_MODULES = [
+    { id: 'patio', name: 'Controle de Pátio', icon: 'fa-truck' },
+    { id: 'mapas', name: 'Mapas Cegos', icon: 'fa-clipboard-check' },
+    { id: 'materia-prima', name: 'Pesagem', icon: 'fa-weight-hanging' },
+    { id: 'carregamento', name: 'Carregamento', icon: 'fa-dolly' },
+    { id: 'relatorios', name: 'Relatórios', icon: 'fa-chart-pie' },
+    { id: 'dashboard', name: 'Dashboard', icon: 'fa-chart-line' },
+    { id: 'cadastros', name: 'Cadastros', icon: 'fa-address-book' },
+    { id: 'produtos', name: 'Produtos', icon: 'fa-boxes' }
+];
+
+function checkPermission(moduleId, action = 'view') {
+    if (isAdmin) return true;
+    const profile = loggedUser.role;
+    const perms = systemPermissions[profile];
+    if (!perms || !perms[moduleId]) return true; // Comportamento padrão: permite se não houver restrição
+    return perms[moduleId][action] !== false;
+}
+
 function renderProfileArea() {
     const content = document.getElementById('profileContent');
     if (!content) return;
@@ -119,6 +143,92 @@ function removeUser(username) {
         usersData = usersData.filter(x => x.username !== username);
         saveAll();
         renderUserList();
+    }
+}
+
+// ===================================================================================
+//          ADMINISTRAÇÃO DE PERMISSÕES (EXCLUSIVO ADM)
+// ===================================================================================
+
+function renderAdminArea() {
+    if (!isAdmin) return;
+    
+    const list = document.getElementById('adminProfileList');
+    const profiles = [...new Set(usersData.map(u => u.role))];
+    
+    list.innerHTML = profiles.map(p => `
+        <div class="menu-item ${currentEditingProfile === p ? 'active' : ''}" onclick="selectProfileForEdit('${p}')" style="cursor:pointer; padding:10px; border-radius:6px;">
+            <i class="fas fa-user-tag"></i> ${p}
+        </div>
+    `).join('');
+
+    if (currentEditingProfile) {
+        document.getElementById('adminEmptyState').style.display = 'none';
+        document.getElementById('adminPermissionEditor').style.display = 'block';
+        document.getElementById('adminCurrentProfileName').innerText = currentEditingProfile.toUpperCase();
+        renderModulePermissions();
+    }
+}
+
+function selectProfileForEdit(profile) {
+    currentEditingProfile = profile;
+    renderAdminArea();
+}
+
+function renderModulePermissions() {
+    const container = document.getElementById('adminModulesContainer');
+    const perms = systemPermissions[currentEditingProfile] || {};
+    
+    container.innerHTML = APP_MODULES.map(mod => {
+        const modPerm = perms[mod.id] || { view: true, edit: true, delete: true };
+        return `
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:15px; border-radius:8px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                    <i class="fas ${mod.icon}" style="color:var(--primary);"></i>
+                    <strong style="font-size:0.9rem;">${mod.name}</strong>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="display:flex; justify-content:space-between; font-size:0.85rem; cursor:pointer;">
+                        Visualizar <input type="checkbox" ${modPerm.view !== false ? 'checked' : ''} onchange="updateTempPerm('${mod.id}', 'view', this.checked)">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; font-size:0.85rem; cursor:pointer;">
+                        Editar <input type="checkbox" ${modPerm.edit !== false ? 'checked' : ''} onchange="updateTempPerm('${mod.id}', 'edit', this.checked)">
+                    </label>
+                    <label style="display:flex; justify-content:space-between; font-size:0.85rem; cursor:pointer;">
+                        Excluir <input type="checkbox" ${modPerm.delete !== false ? 'checked' : ''} onchange="updateTempPerm('${mod.id}', 'delete', this.checked)">
+                    </label>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateTempPerm(modId, action, value) {
+    if (!systemPermissions[currentEditingProfile]) systemPermissions[currentEditingProfile] = {};
+    if (!systemPermissions[currentEditingProfile][modId]) systemPermissions[currentEditingProfile][modId] = { view: true, edit: true, delete: true };
+    systemPermissions[currentEditingProfile][modId][action] = value;
+}
+
+function savePermissions() {
+    localStorage.setItem('system_permissions', JSON.stringify(systemPermissions));
+    
+    // Log de alteração
+    const log = {
+        id: Date.now(),
+        admin: loggedUser.username,
+        profile: currentEditingProfile,
+        date: new Date().toLocaleString(),
+        action: 'Alteração de permissões granulares'
+    };
+    adminLogs.push(log);
+    localStorage.setItem('admin_logs', JSON.stringify(adminLogs));
+    
+    document.getElementById('adminLogBadge').innerText = `Última alteração: ${log.date} por ${log.admin}`;
+    alert(`Permissões para o perfil "${currentEditingProfile}" salvas com sucesso!`);
+    
+    // Notificar via Socket se disponível
+    if (window.socket && socket.connected) {
+        socket.emit('permissions_updated', { profile: currentEditingProfile });
     }
 }
 
