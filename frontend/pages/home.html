@@ -974,8 +974,39 @@
     </div>
     <div id="modalUnifiedApproval" class="modal-overlay" style="z-index: 8000;">
     </div>
-    <script src="../js/config.js"></script>
-    <script src="../js/script.js"></script>
+    <!-- ========================================================================== -->
+    <!--  WILSON CORE 2.4.3 - SISTEMA MODULARIZADO                                -->
+    <!--  Carrega todos os módulos na ordem correta de dependência                -->
+    <!-- ========================================================================== -->
+
+    <!-- CAMADA 1: Fundação (Validações) -->
+    <script src="../js/modules/validators.js"></script>
+
+    <!-- CAMADA 2: Infraestrutura (Config e Dados) -->
+    <script src="../js/modules/config.js"></script>
+    <script src="../js/modules/data-sync.js"></script>
+
+    <!-- CAMADA 3: Comunicação (Notificações) -->
+    <script src="../js/modules/notifications.js"></script>
+
+    <!-- CAMADA 4: Interface (Navegação e UI) -->
+    <script src="../js/modules/ui-navigation.js"></script>
+
+    <!-- CAMADA 5: Regras de Negócio -->
+    <script src="../js/modules/patio.js"></script>
+    <script src="../js/modules/cadastros.js"></script>
+    <script src="../js/modules/mapas-cegos.js"></script>
+    <script src="../js/modules/materia-prima.js"></script>
+    <script src="../js/modules/carregamento.js"></script>
+    <script src="../js/modules/relatorios.js"></script>
+    <script src="../js/modules/dashboard.js"></script>
+    <script src="../js/modules/users.js"></script>
+    <script src="../js/modules/products.js"></script>
+
+    <!-- CAMADA 6: Orquestração (Inicialização) -->
+    <script src="../js/modules/main.js"></script>
+
+    <!-- ========================================================================== -->
     <script>
         // Carrega dinamicamente o script do Socket.IO vindo do servidor
         const socketScript = document.createElement('script');
