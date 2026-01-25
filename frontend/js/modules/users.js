@@ -15,15 +15,86 @@ const APP_MODULES = [
     { id: 'relatorios', name: 'Relatórios', icon: 'fa-chart-pie' },
     { id: 'dashboard', name: 'Dashboard', icon: 'fa-chart-line' },
     { id: 'cadastros', name: 'Cadastros', icon: 'fa-address-book' },
-    { id: 'produtos', name: 'Produtos', icon: 'fa-boxes' }
+    { id: 'produtos', name: 'Produtos', icon: 'fa-boxes' },
+    { id: 'notificacoes', name: 'Notificações / Req', icon: 'fa-bell' }
 ];
+
+// Permissões padrão baseadas no script original
+const DEFAULT_PERMISSIONS = {
+    'Administrador': {
+        'patio': { view: true, edit: true, delete: true },
+        'mapas': { view: true, edit: true, delete: true },
+        'materia-prima': { view: true, edit: true, delete: true },
+        'carregamento': { view: true, edit: true, delete: true },
+        'relatorios': { view: true, edit: true, delete: true },
+        'dashboard': { view: true, edit: true, delete: true },
+        'cadastros': { view: true, edit: true, delete: true },
+        'produtos': { view: true, edit: true, delete: true },
+        'notificacoes': { view: true, edit: true, delete: true }
+    },
+    'Encarregado': {
+        'patio': { view: true, edit: true, delete: true },
+        'mapas': { view: true, edit: true, delete: true },
+        'materia-prima': { view: true, edit: true, delete: true },
+        'carregamento': { view: true, edit: true, delete: true },
+        'relatorios': { view: true, edit: true, delete: true },
+        'dashboard': { view: true, edit: true, delete: true },
+        'cadastros': { view: true, edit: true, delete: true },
+        'produtos': { view: true, edit: true, delete: true },
+        'notificacoes': { view: true, edit: true, delete: true }
+    },
+    'Funcionario': {
+        // As permissões de Funcionário são dinâmicas baseadas no setor (Recebimento vs Conferencia)
+        // Se mainSector === 'Recebimento'
+        'recebimento': {
+            'patio': { view: true, edit: true, delete: true },
+            'mapas': { view: true, edit: true, delete: true },
+            'materia-prima': { view: true, edit: true, delete: true },
+            'carregamento': { view: true, edit: true, delete: true },
+            'relatorios': { view: true, edit: true, delete: true },
+            'dashboard': { view: false, edit: false, delete: false },
+            'cadastros': { view: true, edit: true, delete: true },
+            'produtos': { view: true, edit: true, delete: true },
+            'notificacoes': { view: true, edit: true, delete: true }
+        },
+        // Se mainSector === 'Conferencia'
+        'conferencia': {
+            'patio': { view: true, edit: false, delete: false },
+            'mapas': { view: true, edit: true, delete: false },
+            'materia-prima': { view: false, edit: false, delete: false },
+            'carregamento': { view: false, edit: false, delete: false },
+            'relatorios': { view: true, edit: false, delete: false },
+            'dashboard': { view: false, edit: false, delete: false },
+            'cadastros': { view: false, edit: false, delete: false },
+            'produtos': { view: true, edit: false, delete: false },
+            'notificacoes': { view: false, edit: false, delete: false }
+        }
+    }
+};
 
 function checkPermission(moduleId, action = 'view') {
     if (isAdmin) return true;
-    const profile = loggedUser.role;
-    const perms = systemPermissions[profile];
-    if (!perms || !perms[moduleId]) return true; // Comportamento padrão: permite se não houver restrição
-    return perms[moduleId][action] !== false;
+    
+    const role = loggedUser.role;
+    const perms = systemPermissions[role];
+    
+    // 1. Se houver permissão customizada salva pelo ADM, usa ela
+    if (perms && perms[moduleId]) {
+        return perms[moduleId][action] !== false;
+    }
+    
+    // 2. Caso contrário, usa a permissão padrão
+    let defaultSet = DEFAULT_PERMISSIONS[role];
+    if (role === 'Funcionario') {
+        const sector = (perms && perms.mainSector) || loggedUser.sector || 'Conferencia';
+        defaultSet = (sector === 'Recebimento') ? DEFAULT_PERMISSIONS.Funcionario.recebimento : DEFAULT_PERMISSIONS.Funcionario.conferencia;
+    }
+    
+    if (defaultSet && defaultSet[moduleId]) {
+        return defaultSet[moduleId][action] !== false;
+    }
+    
+    return true; // Fallback: permite se nada for definido
 }
 
 function renderProfileArea() {
@@ -210,10 +281,20 @@ function selectProfileForEdit(profile) {
 
 function renderModulePermissions() {
     const container = document.getElementById('adminModulesContainer');
-    const perms = systemPermissions[currentEditingProfile] || {};
+    const savedPerms = systemPermissions[currentEditingProfile] || {};
+    
+    // Determinar qual set de permissões padrão usar para exibição
+    let defaultSet = DEFAULT_PERMISSIONS[currentEditingProfile];
+    if (currentEditingProfile === 'Funcionario') {
+        const sector = savedPerms.mainSector || 'Conferencia';
+        defaultSet = (sector === 'Recebimento') ? DEFAULT_PERMISSIONS.Funcionario.recebimento : DEFAULT_PERMISSIONS.Funcionario.conferencia;
+    }
     
     container.innerHTML = APP_MODULES.map(mod => {
-        const modPerm = perms[mod.id] || { view: true, edit: true, delete: true };
+        // Prioridade: 1. Salvo pelo ADM, 2. Padrão do Sistema, 3. Tudo true
+        const defMod = (defaultSet && defaultSet[mod.id]) || { view: true, edit: true, delete: true };
+        const modPerm = savedPerms[mod.id] || defMod;
+        
         return `
             <div style="background:#fff; border:1px solid #e2e8f0; padding:15px; border-radius:8px;">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
