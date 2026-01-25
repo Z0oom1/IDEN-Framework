@@ -154,11 +154,16 @@ function renderAdminArea() {
     if (!isAdmin) return;
     
     const list = document.getElementById('adminProfileList');
-    const profiles = [...new Set(usersData.map(u => u.role))];
+    
+    // Lista de perfis padrão do sistema + perfis encontrados nos usuários
+    const defaultProfiles = ['Administrador', 'Supervisor', 'Encarregado', 'Funcionario'];
+    const userProfiles = usersData.map(u => u.role);
+    const profiles = [...new Set([...defaultProfiles, ...userProfiles])].filter(p => p && p !== 'null');
     
     list.innerHTML = profiles.map(p => `
-        <div class="menu-item ${currentEditingProfile === p ? 'active' : ''}" onclick="selectProfileForEdit('${p}')" style="cursor:pointer; padding:10px; border-radius:6px;">
-            <i class="fas fa-user-tag"></i> ${p}
+        <div class="menu-item ${currentEditingProfile === p ? 'active' : ''}" onclick="selectProfileForEdit('${p}')" style="cursor:pointer; padding:10px; border-radius:6px; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-user-tag" style="font-size:0.8rem; opacity:0.7;"></i> 
+            <span>${p}</span>
         </div>
     `).join('');
 
@@ -167,6 +172,9 @@ function renderAdminArea() {
         document.getElementById('adminPermissionEditor').style.display = 'block';
         document.getElementById('adminCurrentProfileName').innerText = currentEditingProfile.toUpperCase();
         renderModulePermissions();
+    } else {
+        document.getElementById('adminEmptyState').style.display = 'block';
+        document.getElementById('adminPermissionEditor').style.display = 'none';
     }
 }
 
