@@ -25,16 +25,26 @@ function renderMapList() {
     const filteredMaps = mapData.filter(m => {
         if (m.date !== fd) return false;
 
-        // Regra de Visibilidade por Setor
-        if (typeof isConferente !== 'undefined' && isConferente && typeof userSubType !== 'undefined' && userSubType) {
-            const uSubType = userSubType.toUpperCase();
+        // Regra de Visibilidade Estrita por Setor
+        const uRole = (typeof loggedUser !== 'undefined' && loggedUser.role) ? String(loggedUser.role).toUpperCase() : '';
+        const uSector = (typeof userSector !== 'undefined' && userSector) ? String(userSector).toUpperCase() : '';
+        const uSubType = (typeof userSubType !== 'undefined' && userSubType) ? String(userSubType).toUpperCase() : '';
+
+        // Admin e Portaria veem tudo
+        if (typeof isAdmin !== 'undefined' && isAdmin) return true;
+        if (uRole === 'PORTARIA') return true;
+
+        const userTargetSector = uSubType || uSector;
+        if (userTargetSector) {
             const mapSectorUpper = (m.setor || '').toUpperCase();
+            
+            // Caso especial Almoxarifado
+            if (userTargetSector === 'ALM') {
+                return mapSectorUpper.includes('ALM') || mapSectorUpper.includes('DOCA');
+            }
 
-            if (uSubType === 'ALM' && mapSectorUpper.includes('ALM')) return true;
-            if (uSubType === 'GAVA' && mapSectorUpper.includes('GAVA')) return true;
-            if (mapSectorUpper.includes(uSubType)) return true;
-
-            return false;
+            // Isolamento estrito
+            return mapSectorUpper.includes(userTargetSector);
         }
 
         return true;
@@ -283,8 +293,31 @@ function signMap(role) {
 function createNewMap() { 
     const id = Date.now().toString(); 
     const rows = []; 
+    
+    // Lista de setores para seleção
+    const setores = [
+        { val: 'DOCA (ALM)', label: 'ALMOXARIFADO' },
+        { val: 'GAVA', label: 'GAVA' },
+        { val: 'INFRAESTRUTURA', label: 'INFRAESTRUTURA' },
+        { val: 'MANUTENÇÃO', label: 'MANUTENÇÃO' },
+        { val: 'LABORATÓRIO', label: 'LABORATÓRIO' },
+        { val: 'SALA DE PESAGEM', label: 'SALA DE PESAGEM' },
+        { val: 'SST', label: 'SST' },
+        { val: 'CD', label: 'CD' },
+        { val: 'COMPRAS', label: 'COMPRAS' },
+        { val: 'OUTROS', label: 'OUTROS' }
+    ];
+
+    let options = setores.map(s => `${s.label}`).join('\n');
+    const sel = prompt("Selecione o Setor Responsável por este Mapa:\n\n" + options);
+    
+    if (!sel) return;
+
+    const chosen = setores.find(s => s.label.toUpperCase() === sel.toUpperCase() || s.val.toUpperCase() === sel.toUpperCase());
+    const finalSector = chosen ? chosen.val : 'OUTROS';
+
     for (let i = 0; i < 8; i++) rows.push({ id: id + '_' + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} }); 
-    mapData.push({ id, date: getBrazilTime().split('T')[0], rows, placa: '', setor: '', launched: false, signatures: {}, divergence: null }); 
+    mapData.push({ id, date: getBrazilTime().split('T')[0], rows, placa: '', setor: finalSector, launched: false, signatures: {}, divergence: null }); 
     saveAll(); 
     renderMapList(); 
     loadMap(id); 

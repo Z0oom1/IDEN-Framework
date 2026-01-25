@@ -519,31 +519,32 @@ function renderPatio() {
         
         if (!dateMatch) return false;
         
-        // Regra de permissão:
-        // 1. Recebimento e Portaria veem tudo
-        if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
+        // Regra de permissão estrita por setor:
+        // 1. Admin e Portaria veem tudo (Portaria precisa ver tudo para dar entrada/saída)
         if (typeof isAdmin !== 'undefined' && isAdmin) return true;
+        if (uRole.toUpperCase() === 'PORTARIA') return true;
         
-        // 2. Conferentes veem apenas seus setores
-        if (typeof isConferente !== 'undefined' && isConferente) {
-            if (typeof userSubType === 'undefined' || !userSubType) return true; // Se não tem subtipo, vê tudo (fallback)
-            
-            const uSubType = userSubType.toUpperCase();
-            const localSpecUpper = (c.localSpec || '').toUpperCase();
+        // 2. Se o usuário tem um setor definido (uSector ou uSubType), isolamento estrito
+        const userTargetSector = (uSubType || uSector).toUpperCase();
+        if (userTargetSector) {
+            const truckLocal = (c.local || '').toUpperCase();
+            const truckLocalSpec = (c.localSpec || '').toUpperCase();
 
-            // ALM vê DOCA (ALM)
-            if (uSubType === 'ALM' && (localSpecUpper.includes('ALM') || c.local === 'ALM')) return true;
-            // GAVA vê GAVA
-            if (uSubType === 'GAVA' && (localSpecUpper.includes('GAVA') || c.local === 'GAVA')) return true;
+            // Caso especial Almoxarifado (ALM)
+            if (userTargetSector === 'ALM') {
+                return truckLocal === 'ALM' || truckLocalSpec.includes('ALM') || truckLocalSpec.includes('DOCA');
+            }
             
-            // Outros conferentes veem seus setores específicos (LAB, INFRA, etc)
-            if (localSpecUpper.includes(uSubType)) return true;
-            
-            // Conferentes 'OUT' veem OUTROS
-            if (uSubType === 'OUT' && c.local === 'OUT') return true;
-            
-            return false;
+            // Caso especial GAVA
+            if (userTargetSector === 'GAVA') {
+                return truckLocal === 'GAVA' || truckLocalSpec.includes('GAVA');
+            }
+
+            // Outros setores (INFRA, LAB, MANUTENCAO, etc)
+            // O isolamento é estrito: o nome do setor deve estar no local ou localSpec
+            return truckLocal === userTargetSector || truckLocalSpec.includes(userTargetSector);
         }
+
         return true; 
     }).sort((a, b) => new Date(a.chegada) - new Date(b.chegada));
 
@@ -815,12 +816,24 @@ function saveEditTruck() {
 
     const truckIndex = patioData.findIndex(t => t.id === id);
 
-    if (truckIndex > -1) {
+        if (truckIndex > -1) {
         const truck = patioData[truckIndex];
         const oldLaudo = truck.comLaudo;
+        const oldPlaca = truck.placa;
 
         truck.placa = placa;
         truck.comLaudo = laudo;
+
+        // SINCRONIZAÇÃO GLOBAL: Atualizar placa em outros módulos
+        if (oldPlaca !== placa) {
+            // Atualizar no Mapa Cego
+            const map = mapData.find(m => m.id === id);
+            if (map) map.placa = placa;
+
+            // Atualizar na Pesagem (Matéria Prima)
+            const mp = mpData.find(m => m.id === id);
+            if (mp) mp.placa = placa;
+        }
 
         // Notificar se laudo mudou para 'Tem Laudo'
         if (!oldLaudo && laudo) {
@@ -847,8 +860,15 @@ function saveEditTruck() {
         const newSec = secMap[dest] || { n: 'OUTROS', c: 'OUT' };
 
         if (truck.status !== 'SAIU') {
+            const oldSector = truck.localSpec;
             truck.local = newSec.c;
             truck.localSpec = newSec.n;
+
+            // SINCRONIZAÇÃO GLOBAL: Atualizar setor no Mapa Cego
+            if (oldSector !== newSec.n) {
+                const map = mapData.find(m => m.id === id);
+                if (map) map.setor = newSec.n;
+            }
         }
 
         if (editTmpItems && editTmpItems.length > 0) {
