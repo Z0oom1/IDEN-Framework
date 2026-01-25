@@ -65,6 +65,8 @@ async function loadDataFromServer() {
         restoreFromLocal();
     }
     refreshCurrentView();
+    // Dispara evento para módulos que dependem de dados carregados
+    window.dispatchEvent(new CustomEvent('aw_data_loaded'));
 }
 
 // Alias para compatibilidade

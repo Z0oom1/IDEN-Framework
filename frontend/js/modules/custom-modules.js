@@ -66,7 +66,20 @@ function renderCustomModulesAdmin() {
                     <div class="form-grid">
                         <div><label>Nome do Menu:</label><input type="text" id="modLabel" class="form-control" placeholder="Ex: Meu Relatório"></div>
                         <div><label>ID Único (apenas letras/números):</label><input type="text" id="modId" class="form-control" placeholder="Ex: meu_relatorio"></div>
-                        <div><label>Ícone FontAwesome:</label><input type="text" id="modIcon" class="form-control" placeholder="Ex: fas fa-file-invoice"></div>
+                        <div>
+                            <label>Ícone:</label>
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" id="modIcon" class="form-control" placeholder="Ex: fas fa-file-invoice" style="flex:1;">
+                                <button class="btn btn-edit" onclick="toggleIconGallery()" title="Ver Galeria" style="padding: 0 10px;"><i class="fas fa-icons"></i></button>
+                            </div>
+                            <div id="iconGallery" style="display:none; margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; max-height:150px; overflow-y:auto;">
+                                ${['fas fa-cube', 'fas fa-chart-bar', 'fas fa-file-invoice', 'fas fa-users', 'fas fa-cog', 'fas fa-database', 'fas fa-truck', 'fas fa-boxes', 'fas fa-clipboard-list', 'fas fa-calendar-alt', 'fas fa-envelope', 'fas fa-bell', 'fas fa-user-shield', 'fas fa-plug', 'fas fa-vial', 'fas fa-tools', 'fas fa-map-marked-alt', 'fas fa-warehouse', 'fas fa-history', 'fas fa-print'].map(icon => `
+                                    <div onclick="selectIcon('${icon}')" style="cursor:pointer; padding:8px; text-align:center; border-radius:4px; hover:background:#e2e8f0;">
+                                        <i class="${icon}" style="font-size:1.2rem; color:var(--primary);"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     </div>
                     <div style="margin-top:15px;">
                         <label>Conteúdo HTML (CSS/JS podem ser incluídos em tags &lt;style&gt; e &lt;script&gt;):</label>
@@ -112,6 +125,17 @@ function openModuleEditor(id = null) {
 
 function closeModuleEditor() {
     document.getElementById('modalModuleEditor').style.display = 'none';
+    document.getElementById('iconGallery').style.display = 'none';
+}
+
+function toggleIconGallery() {
+    const gallery = document.getElementById('iconGallery');
+    gallery.style.display = gallery.style.display === 'none' ? 'grid' : 'none';
+}
+
+function selectIcon(icon) {
+    document.getElementById('modIcon').value = icon;
+    document.getElementById('iconGallery').style.display = 'none';
 }
 
 function saveModule() {
@@ -240,17 +264,60 @@ function injectCustomMenus() {
 function hasPermission(permId) {
     if (isAdmin) return true; // Administrador tem acesso total
     if (!loggedUser) return false;
+
+    // 1. Obter Permissões Base do Perfil (Hardcoded conforme regras originais)
+    const basePerms = getBasePermissions(loggedUser);
     
-    const perms = userPermissionsData[loggedUser.username];
+    // 2. Obter Customizações do Administrador (se existirem)
+    // Estrutura: { username: { allowed: [], denied: [] } }
+    const custom = userPermissionsData[loggedUser.username] || { allowed: [], denied: [] };
+
+    // Se as permissões customizadas ainda estiverem no formato antigo (array simples), converte
+    let allowed = Array.isArray(custom) ? custom : (custom.allowed || []);
+    let denied = Array.isArray(custom) ? [] : (custom.denied || []);
+
+    // 3. Lógica de Decisão:
+    // - Se estiver na lista de negados explicitamente pelo admin, bloqueia.
+    // - Se estiver na lista de permitidos explicitamente pelo admin, permite.
+    // - Caso contrário, segue a base do perfil.
+    if (denied.includes(permId)) return false;
+    if (allowed.includes(permId)) return true;
     
-    // Se não houver permissões definidas, aplica lógica de fallback (opcional)
-    if (!perms) {
-        // Fallback básico para novos usuários sem configuração
-        const basicPerms = ['menu:perfil', 'menu:configuracoes', 'menu:notificacoes'];
-        return basicPerms.includes(permId);
+    return basePerms.includes(permId);
+}
+
+function getBasePermissions(user) {
+    const sector = (user.sector || '').toLowerCase();
+    const role = (user.role || '').toString().toLowerCase();
+    const subType = user.subType;
+    const perms = ['menu:perfil', 'menu:notificacoes']; // Comum a todos
+
+    // Administrador (já tratado no hasPermission, mas mantido por consistência)
+    if (role.includes('admin') || role.includes('administrador')) {
+        return SYSTEM_MODULES.map(m => m.id).concat(customModulesData.map(m => `module:${m.id}`));
     }
-    
-    return perms.includes(permId);
+
+    // Recebimento
+    if (sector === 'recebimento') {
+        perms.push('menu:patio', 'menu:mapas', 'menu:materia-prima', 'menu:cadastros', 'menu:produtos', 'menu:dashboard');
+    }
+
+    // Conferente
+    if (sector === 'conferente') {
+        perms.push('menu:patio', 'menu:mapas', 'menu:produtos');
+    }
+
+    // Portaria (Geralmente mapeada como recebimento ou setor específico no Wilson)
+    if (role.includes('portaria')) {
+        perms.push('menu:patio');
+    }
+
+    // Expedição / Carregamento
+    if (role.includes('logistica') || role.includes('expedicao') || sector === 'expedicao') {
+        perms.push('menu:carregamento', 'menu:patio');
+    }
+
+    return perms;
 }
 
 function openPermissionEditor(username) {
@@ -266,15 +333,25 @@ function openPermissionEditor(username) {
         document.body.appendChild(modal);
     }
 
-    const currentPerms = userPermissionsData[username] || [];
+    const custom = userPermissionsData[username] || { allowed: [], denied: [] };
+    const basePerms = getBasePermissions(user);
 
     const renderCheck = (id, label, icon) => {
-        const checked = currentPerms.includes(id) ? 'checked' : '';
+        const isBase = basePerms.includes(id);
+        const isAllowed = Array.isArray(custom) ? custom.includes(id) : custom.allowed.includes(id);
+        const isDenied = Array.isArray(custom) ? false : custom.denied.includes(id);
+        
+        // Estado final: se for base e não negado, ou se for permitido explicitamente
+        const isChecked = (isBase && !isDenied) || isAllowed;
+        const opacity = isBase ? '1' : '0.8';
+        const badge = isBase ? '<span style="font-size:0.6rem; background:#e1f5fe; color:#01579b; padding:2px 5px; border-radius:4px; margin-left:auto;">PADRÃO</span>' : '';
+
         return `
-            <label style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid rgba(0,0,0,0.05); cursor:pointer;">
-                <input type="checkbox" value="${id}" ${checked} style="width:18px; height:18px;">
+            <label style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid rgba(0,0,0,0.05); cursor:pointer; opacity:${opacity}">
+                <input type="checkbox" data-id="${id}" data-base="${isBase}" ${isChecked ? 'checked' : ''} style="width:18px; height:18px;">
                 <i class="${icon}" style="width:20px; text-align:center; color:var(--primary);"></i>
                 <span>${label}</span>
+                ${badge}
             </label>
         `;
     };
@@ -305,17 +382,34 @@ function openPermissionEditor(username) {
 }
 
 function saveUserPermissions(username) {
+    const user = usersData.find(u => u.username === username);
     const modal = document.getElementById('modalPermEditor');
-    const checks = modal.querySelectorAll('input[type="checkbox"]:checked');
-    const selectedPerms = Array.from(checks).map(c => c.value);
+    const checks = modal.querySelectorAll('input[type="checkbox"]');
+    const basePerms = getBasePermissions(user);
 
-    userPermissionsData[username] = selectedPerms;
+    const allowed = [];
+    const denied = [];
+
+    checks.forEach(cb => {
+        const id = cb.getAttribute('data-id');
+        const isBase = cb.getAttribute('data-base') === 'true';
+        const isChecked = cb.checked;
+
+        if (isBase && !isChecked) {
+            // Era padrão e foi desmarcado -> Adiciona aos negados
+            denied.push(id);
+        } else if (!isBase && isChecked) {
+            // Não era padrão e foi marcado -> Adiciona aos permitidos
+            allowed.push(id);
+        }
+    });
+
+    userPermissionsData[username] = { allowed, denied };
     saveAll();
     
     alert(`Permissões de ${username} atualizadas!`);
     modal.style.display = 'none';
     
-    // Se for o próprio usuário logado, atualiza a interface imediatamente
     if (loggedUser && loggedUser.username === username) {
         injectCustomMenus();
     }
@@ -360,8 +454,16 @@ window.navTo = function(view, el) {
 
 // Inicialização automática ao carregar o script
 document.addEventListener('DOMContentLoaded', () => {
-    // Pequeno delay para garantir que o data-sync carregou os dados do servidor
-    setTimeout(() => {
+    // Escuta evento de atualização do sistema para reinjetar menus se necessário
+    window.addEventListener('aw_data_loaded', () => {
+        console.log("Wilson Core: Dados carregados, injetando menus...");
         injectCustomMenus();
-    }, 1000);
+    });
+
+    // Fallback caso o evento não dispare ou demore
+    setTimeout(() => {
+        if (document.querySelectorAll('.menu-item-custom').length === 0) {
+            injectCustomMenus();
+        }
+    }, 2000);
 });
