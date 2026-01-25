@@ -725,12 +725,19 @@ function executeDeleteTruck() {
         patioData = patioData.filter(x => x.id !== id);
         mapData = mapData.filter(x => x.id !== id);
         mpData = mpData.filter(x => x.id !== id);
-        requests = requests.filter(r => true);
+        // Remove também notificações relacionadas
+        requests = requests.filter(r => r.mapId !== id && r.truckId !== id);
     }
 
     saveAll();
-    renderPatio();
-    if (document.getElementById('view-mapas').classList.contains('active')) renderMapList();
+    
+    // Atualiza a visualização ativa
+    if (document.getElementById('view-patio').classList.contains('active')) renderPatio();
+    if (document.getElementById('view-mapas').classList.contains('active')) {
+        currentMapId = null;
+        renderMapList();
+        updateMapState();
+    }
     if (document.getElementById('view-materia-prima').classList.contains('active')) renderMateriaPrima();
 
     document.getElementById('modalDeleteConfirm').style.display = 'none';

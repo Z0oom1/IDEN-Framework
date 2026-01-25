@@ -227,4 +227,16 @@ function renderRequests() {
     updateBadge();
 }
 
-function resolveRequest(id, st) { const i = requests.findIndex(r => r.id === id); if (i > -1) { requests[i].status = st; if (st === 'approved' && requests[i].type === 'edit') { const m = mapData.find(x => x.id === requests[i].mapId); if (m) m.forceUnlock = true; } saveAll(); renderRequests(); } }
+function resolveRequest(id, st) { 
+    const i = requests.findIndex(r => r.id == id); 
+    if (i > -1) { 
+        requests[i].status = st; 
+        if ((st === 'approved' || st === 'APROVADO') && requests[i].type === 'edit') { 
+            const m = mapData.find(x => x.id === requests[i].mapId); 
+            if (m) m.forceUnlock = true; 
+        } 
+        saveAll(); 
+        renderRequests(); 
+        alert('Solicitação processada com sucesso.');
+    } 
+}

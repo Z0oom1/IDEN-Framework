@@ -83,14 +83,18 @@ function loadMap(id) {
     else b.style.display = 'none';
     
     const st = document.getElementById('mapStatus');
+    
+    // Botão de Link para o Pátio
+    const patioLinkBtn = `<button class="btn btn-edit" onclick="navTo('patio'); setTimeout(() => { const el = document.getElementById('truck-${m.id}'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 500)" style="background:#0369a1; color:white; border:none; margin-right:10px;"><i class="fas fa-truck"></i> Ver no Pátio</button>`;
+    
     if (m.launched && !m.forceUnlock) { 
-        st.textContent = 'LANÇADO (Bloqueado)'; 
+        st.innerHTML = patioLinkBtn + ' LANÇADO (Bloqueado)'; 
         st.style.color = 'green'; 
         document.getElementById('btnLaunch').style.display = 'none'; 
         document.getElementById('btnRequestEdit').style.display = isConferente ? 'inline-block' : 'none'; 
     }
     else { 
-        st.textContent = m.forceUnlock ? 'EM EDIÇÃO (Desbloqueado)' : 'Rascunho'; 
+        st.innerHTML = patioLinkBtn + (m.forceUnlock ? ' EM EDIÇÃO (Desbloqueado)' : ' Rascunho'); 
         st.style.color = m.forceUnlock ? 'orange' : '#666'; 
         document.getElementById('btnLaunch').style.display = 'inline-block'; 
         document.getElementById('btnRequestEdit').style.display = 'none'; 
