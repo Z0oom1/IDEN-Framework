@@ -306,7 +306,12 @@ function saveTruckAndMap() {
     };
     const sec = secMap[dest] || { n: 'OUTROS', c: 'OUT' };
     const id = Date.now().toString();
-    const todayStr = getBrazilTime().split('T')[0];
+    
+    // Mudança: Garantindo formato YYYY-MM-DD estável para filtragem
+    const brazilTime = getBrazilTime();
+    const todayStr = brazilTime.split('T')[0];
+    const isoDate = new Date().toISOString().split('T')[0];
+
     const dailyCount = patioData.filter(t => (t.chegada || '').startsWith(todayStr)).length;
     const seq = dailyCount + 1;
 
@@ -336,7 +341,8 @@ function saveTruckAndMap() {
         saidaNotified: false,
         comLaudo: laudo,
         releasedBy: null,
-        chegada: getBrazilTime(),
+        chegada: brazilTime,
+        dateRef: isoDate, // Novo campo para garantir exibição estável
         saida: null,
         isProvisory: false,
         cargas: [{ numero: '1', produtos: tmpItems.map(i => ({ nome: i.prod, qtd: '-', nf: i.nf })) }]
@@ -376,7 +382,7 @@ function saveTruckAndMap() {
             empresa: fornName, 
             placa: placaVal, 
             local: sec.n, 
-            chegada: getBrazilTime(), 
+            chegada: brazilTime, 
             entrada: null, 
             tara: 0, 
             bruto: 0, 
@@ -531,13 +537,24 @@ function renderPatio() {
 
     const badge = document.getElementById('totalTrucksBadge');
     if (badge) {
-        const dailyActiveCount = patioData.filter(x => x.status !== 'SAIU' && (x.chegada || '').startsWith(fd)).length;
+        // Correção na filtragem do badge: usa split('T')[0] para comparar apenas a data YYYY-MM-DD
+        const dailyActiveCount = patioData.filter(x => {
+            const dataChegada = (x.chegada || '').split('T')[0];
+            return x.status !== 'SAIU' && dataChegada === fd;
+        }).length;
         badge.innerText = dailyActiveCount;
     }
 
     const list = patioData.filter(c => {
-        if (c.status === 'SAIU') return (c.saida || '').startsWith(fd);
-        return (c.chegada || '').split('T')[0] === fd;
+        // Normalização da data de comparação para evitar erros de fuso horário
+        const dataCaminhao = (c.status === 'SAIU' ? (c.saida || '') : (c.chegada || '')).split('T')[0];
+        
+        // Fallback para o novo campo dateRef caso a string de chegada esteja corrompida
+        if (c.dateRef && dataCaminhao !== fd) {
+            return c.dateRef === fd;
+        }
+
+        return dataCaminhao === fd;
     }).sort((a, b) => new Date(a.chegada) - new Date(b.chegada));
 
     list.forEach(c => {
@@ -576,7 +593,7 @@ function renderPatio() {
             <div class="card-basic">
                 <div>
                     <div class="card-company">${displayName} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${c.isProvisory ? '<span style="font-size:0.6rem; background:orange; color:white; padding:2px">REQ</span>' : ''}</div>
-                    <small>${c.placa} • ${c.chegada.slice(11, 16)}</small>
+                    <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
                     <div class="sector-tag">${c.localSpec}</div>
                     ${laudoHtml}
                 </div>

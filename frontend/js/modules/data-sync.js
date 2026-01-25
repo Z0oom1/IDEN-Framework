@@ -21,6 +21,17 @@ async function loadDataFromServer() {
         if (!response.ok) throw new Error("Offline");
         const data = await response.json();
 
+        // TRAVA DE SEGURANÇA: Só sobrescreve se o servidor trouxer dados ou se você confirmar
+        const isServerEmpty = Object.keys(data).length === 0;
+        const hasLocalData = localStorage.getItem('aw_caminhoes_v2');
+
+        if (isServerEmpty && hasLocalData) {
+            console.warn("Servidor retornou vazio, mantendo dados locais para segurança.");
+            restoreFromLocal(); //
+            return;
+        }
+
+        // Se passar pela trava, carrega normalmente
         patioData = data.aw_caminhoes_v2 || [];
         mapData = data.mapas_cegos_v3 || [];
         mpData = data.aw_materia_prima || [];
