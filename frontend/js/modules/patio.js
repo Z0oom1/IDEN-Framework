@@ -697,7 +697,9 @@ function openTruckContextMenu(x, y, id) {
 }
 
 function confirmDeleteTruck(id) {
-    if (!checkPermission('patio', 'delete')) return alert('Você não tem permissão para excluir veículos.');
+    // Verifica permissão básica (Admin, Encarregado ou Recebimento)
+    const isAuthorized = isAdmin || isEncarregado || (typeof userSector !== 'undefined' && userSector === 'recebimento');
+    if (!isAuthorized) return alert('Você não tem permissão para excluir veículos.');
     
     contextTruckId = id;
     deleteOptionSelected = 'queue';
