@@ -167,13 +167,16 @@ function openMapContextMenu(x, y, id) {
 function renderRows(m) {
     const tb = document.getElementById('mapBody'); tb.innerHTML = '';
     const locked = m.launched && !m.forceUnlock;
-
     const isMobile = window.innerWidth <= 768;
 
-    m.rows.forEach(r => {
-        // No mobile, se a linha estiver totalmente vazia (sem descrição e sem NF), nós a ocultamos
-        if (isMobile && !r.desc && !r.nf && !r.qty && !r.qty_nf) return;
+    // Filtramos as linhas: se a linha estiver totalmente vazia, nós a ocultamos (Geral)
+    // Exceto se o mapa for novo e não tiver nenhuma linha com dados, mostramos pelo menos uma vazia para começar
+    let rowsToRender = m.rows.filter(r => r.desc || r.nf || r.qty || r.qty_nf || r.forn);
+    if (rowsToRender.length === 0 && !locked) {
+        rowsToRender = [m.rows[0]]; // Mostra a primeira linha mesmo vazia se for edição
+    }
 
+    rowsToRender.forEach(r => {
         const tr = document.createElement('tr');
         
         // Se houver divergência marcada para esta linha, destaca
@@ -220,17 +223,43 @@ function renderRows(m) {
             </td>`;
         };
 
-        tr.innerHTML = `${createCell('desc', 'receb')} ${createCell('qty_nf', 'receb')} ${createCell('qty', 'conf')} ${createCell('nf', 'receb')} ${createCell('forn', 'receb')}`;
+        let html = `${createCell('desc', 'receb')} ${createCell('qty_nf', 'receb')} ${createCell('qty', 'conf')} ${createCell('nf', 'receb')} ${createCell('forn', 'receb')}`;
+        
+        // Botão de remover linha (apenas se não estiver bloqueado)
+        if (!locked) {
+            html += `<td class="actions-cell" style="width:40px; text-align:center;">
+                <button class="btn-remove-row" onclick="removeMapRow('${r.id}')" title="Remover Linha" style="background:none; border:none; color:#ef4444; cursor:pointer;">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </td>`;
+        }
+
+        tr.innerHTML = html;
         tb.appendChild(tr);
     });
     
-    // Adicionar botão de "Mais Linhas" se não estiver bloqueado
-    if (!locked) {
-        const footerTr = document.createElement('tr');
-        footerTr.innerHTML = `<td colspan="5" style="text-align:center; padding:10px;">
-            <button class="btn btn-edit" onclick="addMapRow()" style="font-size:0.8rem; padding:5px 15px;">+ Adicionar Linha</button>
-        </td>`;
-        tb.appendChild(footerTr);
+    // Área de ações do rodapé (Adicionar Linha)
+    const footerActions = document.getElementById('mapFooterActions');
+    if (footerActions) {
+        footerActions.innerHTML = '';
+        if (!locked) {
+            const btnAdd = document.createElement('button');
+            btnAdd.className = 'btn btn-edit';
+            btnAdd.innerHTML = '<i class="fas fa-plus"></i> Adicionar Linha';
+            btnAdd.onclick = addMapRow;
+            footerActions.appendChild(btnAdd);
+        }
+    }
+}
+
+function removeMapRow(rowId) {
+    const m = mapData.find(x => x.id === currentMapId);
+    if (!m) return;
+    
+    if (confirm('Deseja realmente remover esta linha?')) {
+        m.rows = m.rows.filter(r => r.id !== rowId);
+        saveAll();
+        renderRows(m);
     }
 }
 
