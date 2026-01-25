@@ -1,13 +1,8 @@
-// ===================================================================================
-//          MÓDULO DE DADOS E SINCRONIZAÇÃO
-// ===================================================================================
-
-let suppliersData = [];     // { id, nome }
-let carriersData = [];      // { id, nome, apelido, cnpj, supplierIds: [] }
-let driversData = [];       // { id, nome, doc, carrierIds: [] }
-let platesData = [];        // { id, numero, driverId }
+let suppliersData = [];
+let carriersData = [];
+let driversData = [];
+let platesData = [];
 let productsData = [];
-
 let patioData = [];
 let mapData = [];
 let mpData = [];
@@ -15,30 +10,46 @@ let carregamentoData = [];
 let requests = [];
 let usersData = [];
 
+async function checkServerStatus() {
+    try {
+        const response = await fetch(`${API_URL}/api/status`, { cache: "no-store" });
+        const indicator = document.getElementById('statusIndicator');
+        const text = document.getElementById('statusText');
+        if (response.ok) {
+            if (indicator) indicator.className = 'inline-block w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]';
+            if (text) { text.innerText = 'Online'; text.className = 'text-emerald-500'; }
+            return true;
+        }
+        throw new Error();
+    } catch (e) {
+        const indicator = document.getElementById('statusIndicator');
+        const text = document.getElementById('statusText');
+        if (indicator) indicator.className = 'inline-block w-2 h-2 rounded-full bg-red-500';
+        if (text) { text.innerText = 'Offline'; text.className = 'text-red-500'; }
+        return false;
+    }
+}
+
 async function loadDataFromServer() {
+    await checkServerStatus();
     try {
         const response = await fetch(`${API_URL}/api/sync?t=${Date.now()}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Offline");
         const data = await response.json();
 
-        // TRAVA DE SEGURANÇA: Só sobrescreve se o servidor trouxer dados ou se você confirmar
-        const isServerEmpty = Object.keys(data).length === 0;
-        const hasLocalData = localStorage.getItem('aw_caminhoes_v2');
-
-        if (isServerEmpty && hasLocalData) {
-            console.warn("Servidor retornou vazio, mantendo dados locais para segurança.");
-            restoreFromLocal(); //
+        if (Object.keys(data).length === 0 && localStorage.getItem('aw_caminhoes_v2')) {
+            console.log("Servidor vazio detectado. Restaurando backup local e sincronizando...");
+            restoreFromLocal();
+            saveAll(); // Garante que os dados locais voltem para o servidor
             return;
         }
 
-        // Se passar pela trava, carrega normalmente
         patioData = data.aw_caminhoes_v2 || [];
         mapData = data.mapas_cegos_v3 || [];
         mpData = data.aw_materia_prima || [];
         carregamentoData = data.aw_carregamento || [];
         requests = data.aw_requests || [];
         usersData = data.mapa_cego_users || [];
-
         suppliersData = data.aw_suppliers || [];
         carriersData = data.aw_carriers || [];
         driversData = data.aw_drivers || [];
@@ -47,38 +58,33 @@ async function loadDataFromServer() {
 
         saveToLocalOnly();
     } catch (error) {
-        console.warn("Modo Offline / Erro Sync:", error);
         restoreFromLocal();
     }
     refreshCurrentView();
 }
 
-function restoreFromLocal() {
-    patioData = JSON.parse(localStorage.getItem('aw_caminhoes_v2') || '[]');
-    mapData = JSON.parse(localStorage.getItem('mapas_cegos_v3') || '[]');
-    mpData = JSON.parse(localStorage.getItem('aw_materia_prima') || '[]');
-    carregamentoData = JSON.parse(localStorage.getItem('aw_carregamento') || '[]');
-    requests = JSON.parse(localStorage.getItem('aw_requests') || '[]');
-    usersData = JSON.parse(localStorage.getItem('mapa_cego_users') || '[]');
+// Alias para compatibilidade
+window.loadData = loadDataFromServer;
 
-    suppliersData = JSON.parse(localStorage.getItem('aw_suppliers') || '[]');
-    carriersData = JSON.parse(localStorage.getItem('aw_carriers') || '[]');
-    driversData = JSON.parse(localStorage.getItem('aw_drivers') || '[]');
-    platesData = JSON.parse(localStorage.getItem('aw_plates') || '[]');
-    productsData = JSON.parse(localStorage.getItem('aw_products') || '[]');
+function refreshCurrentView() {
+    const activeView = document.querySelector('.view-section.active');
+    if(activeView) {
+        if (activeView.id === 'view-patio' && typeof renderPatio === 'function') renderPatio();
+        if (activeView.id === 'view-mapas' && typeof renderMapList === 'function') renderMapList();
+        if (activeView.id === 'view-materia-prima' && typeof renderMateriaPrima === 'function') renderMateriaPrima();
+        if (activeView.id === 'view-carregamento' && typeof renderCarregamento === 'function') renderCarregamento();
+        if (activeView.id === 'view-cadastros' && typeof renderCadastros === 'function') renderCadastros();
+    }
 }
 
 function saveAll() {
     saveToLocalOnly();
-    // Salvar no servidor (Dados Transacionais)
     saveToServer('aw_caminhoes_v2', patioData);
     saveToServer('mapas_cegos_v3', mapData);
     saveToServer('aw_materia_prima', mpData);
     saveToServer('aw_carregamento', carregamentoData);
     saveToServer('aw_requests', requests);
     saveToServer('mapa_cego_users', usersData);
-
-    // Salvar no servidor (Dados Relacionais NOVOS)
     saveToServer('aw_suppliers', suppliersData);
     saveToServer('aw_carriers', carriersData);
     saveToServer('aw_drivers', driversData);
@@ -91,7 +97,7 @@ function saveToServer(key, data) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: key, data: data })
-    }).catch(err => console.error("Erro ao salvar no servidor (pode estar offline):", err));
+    }).catch(err => console.error("Erro ao salvar no servidor:", err));
 }
 
 function saveToLocalOnly() {
@@ -102,8 +108,6 @@ function saveToLocalOnly() {
         localStorage.setItem('aw_carregamento', JSON.stringify(carregamentoData));
         localStorage.setItem('aw_requests', JSON.stringify(requests));
         localStorage.setItem('mapa_cego_users', JSON.stringify(usersData));
-
-        // Novos
         localStorage.setItem('aw_suppliers', JSON.stringify(suppliersData));
         localStorage.setItem('aw_carriers', JSON.stringify(carriersData));
         localStorage.setItem('aw_drivers', JSON.stringify(driversData));
@@ -112,23 +116,16 @@ function saveToLocalOnly() {
     } catch (e) { console.error("Erro ao salvar local:", e); }
 }
 
-function backupData() { const d = { patio: patioData, mapas: mapData, mp: mpData, carr: carregamentoData, req: requests }; const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(d)); a.download = 'backup.json'; a.click(); }
-
-function restoreData(i) { const f = i.files[0]; const r = new FileReader(); r.onload = e => { const d = JSON.parse(e.target.result); if (confirm('Restaurar?')) { if (d.patio) localStorage.setItem('aw_caminhoes_v2', JSON.stringify(d.patio)); if (d.mapas) localStorage.setItem('mapas_cegos_v3', JSON.stringify(d.mapas)); if (d.mp) localStorage.setItem('aw_materia_prima', JSON.stringify(d.mp)); if (d.carr) localStorage.setItem('aw_carregamento', JSON.stringify(d.carr)); window.location.reload(); } }; r.readAsText(f); }
-
-function clearAllData() {
-    if (confirm('PERIGO: Isso apagará TODOS os dados de TODOS os computadores.\n\nTem certeza absoluta?')) {
-        fetch(`${API_URL}/api/reset`, { method: 'DELETE' })
-            .then(response => {
-                if (response.ok) {
-                    alert('Sistema resetado com sucesso!');
-                } else {
-                    alert('Erro ao tentar resetar o servidor.');
-                }
-            })
-            .catch(error => {
-                console.error("Erro:", error);
-                alert('Erro de conexão ao tentar resetar.');
-            });
-    }
+function restoreFromLocal() {
+    patioData = JSON.parse(localStorage.getItem('aw_caminhoes_v2') || '[]');
+    mapData = JSON.parse(localStorage.getItem('mapas_cegos_v3') || '[]');
+    mpData = JSON.parse(localStorage.getItem('aw_materia_prima') || '[]');
+    carregamentoData = JSON.parse(localStorage.getItem('aw_carregamento') || '[]');
+    requests = JSON.parse(localStorage.getItem('aw_requests') || '[]');
+    usersData = JSON.parse(localStorage.getItem('mapa_cego_users') || '[]');
+    suppliersData = JSON.parse(localStorage.getItem('aw_suppliers') || '[]');
+    carriersData = JSON.parse(localStorage.getItem('aw_carriers') || '[]');
+    driversData = JSON.parse(localStorage.getItem('aw_drivers') || '[]');
+    platesData = JSON.parse(localStorage.getItem('aw_plates') || '[]');
+    productsData = JSON.parse(localStorage.getItem('aw_products') || '[]');
 }

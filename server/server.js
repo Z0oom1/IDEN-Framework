@@ -29,13 +29,11 @@ app.get('/', (req, res) => {
     })
 })
 
-// CORREÇÃO: Caminho absoluto garantido para o SQLite
 const dbPath = path.join(__dirname, DB_FILE)
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Erro ao abrir banco de dados:", err.message)
     } else {
-        console.log("Banco de dados conectado em:", dbPath)
         initDb()
     }
 })
@@ -53,6 +51,7 @@ io.on('connection', (socket) => {
 })
 
 app.get('/api/status', (req, res) => {
+    res.set('Cache-Control', 'no-store')
     res.json({ status: 'online', uptime: process.uptime() })
 })
 
@@ -107,11 +106,6 @@ app.delete('/api/reset', (req, res) => {
         io.emit('atualizar_sistema')
         res.json({ success: true })
     })
-})
-
-app.get('/dashboard', (req, res) => {
-    // Mantido conforme original por brevidade, apenas certifique-se que o frontend aponta para a porta 2006
-    res.send(`...`) 
 })
 
 server.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor rodando na porta ${PORT}`))

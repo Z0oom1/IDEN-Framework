@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 (async () => {
-  const base = 'http://localhost:3000';
+  const base = 'http://localhost:2006';
   try {
     // 1) Test login
     let r = await fetch(base + '/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ username: 'admin', password: 'admin' }) });

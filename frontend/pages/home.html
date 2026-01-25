@@ -14,24 +14,6 @@
     <link rel="stylesheet" href="../css/estilo_geral.css">
     <link rel="shortcut icon" href="../Imgs/logo.png" type="image/x-icon">
     
-    <script>
-        var script = document.createElement('script');
-        // Se estiver rodando como arquivo (Electron Produção) busca na porta 2006
-        // Se estiver rodando http (Vite ou Server), busca relativo (Proxy resolve)
-        if (window.location.protocol === 'file:') {
-            script.src = "http://localhost:2006/socket.io/socket.io.js";
-        } else {
-            script.src = "/socket.io/socket.io.js";
-        }
-        
-        script.onload = function() {
-            console.log("Bibliote Socket.IO carregada.");
-            initRealTimeSystem(); // Inicia a escuta assim que carregar
-        };
-        
-        document.head.appendChild(script);
-    </script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -521,6 +503,11 @@
             <div id="profileContent"></div>
         </div>
 
+        <!-- CONTAINER PARA MÓDULOS CUSTOMIZADOS -->
+        <div id="view-custom-module" class="view-section">
+            <div id="customModuleContainer"></div>
+        </div>
+
         <div id="view-configuracoes" class="view-section">
             <h2 style="margin-bottom:20px;">Configurações</h2>
             <div class="settings-grid">
@@ -546,6 +533,15 @@
                     <div style="display:flex; gap:10px;"><button class="btn btn-save"
                             onclick="manualRequestPermission()">Ativar Notificações</button><button class="btn btn-edit"
                             onclick="playBeep()">Testar Som</button></div>
+                    
+                    <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                        <label style="font-weight:bold; font-size:0.8rem;">IP do Servidor (Configuração de Rede)</label>
+                        <div style="display:flex; gap:5px; margin-top:5px;">
+                            <input type="text" id="cfgServerIP" placeholder="Ex: 192.168.0.100" class="form-input-styled">
+                            <button class="btn btn-save" onclick="saveServerIP()">Salvar</button>
+                        </div>
+                        <div style="font-size:0.75rem; color:#888; margin-top:3px;">Necessário para o Electron sincronizar em rede.</div>
+                    </div>
                 </div>
                 <div class="settings-card">
                     <h4><i class="fas fa-database"></i> Dados</h4>
@@ -991,6 +987,7 @@
 
     <!-- CAMADA 4: Interface (Navegação e UI) -->
     <script src="../js/modules/ui-navigation.js"></script>
+    <script src="../js/modules/custom-modules.js"></script>
 
     <!-- CAMADA 5: Regras de Negócio -->
     <script src="../js/modules/patio.js"></script>
@@ -1008,18 +1005,33 @@
 
     <!-- ========================================================================== -->
     <script>
+        // HACK: Electron define 'module' globalmente, o que confunde o carregador do Socket.IO
+        // Escondemos o module temporariamente para garantir que o Socket.IO carregue corretamente
+        if (typeof module === 'object') {
+            window.module = module;
+            module = undefined;
+        }
+    </script>
+
+    <script>
         // Carrega dinamicamente o script do Socket.IO vindo do servidor
         const socketScript = document.createElement('script');
         socketScript.src = `${API_BASE_URL}/socket.io/socket.io.js`;
         
         socketScript.onload = function() {
             console.log("✅ Biblioteca Socket.IO carregada do servidor.");
+            // Restaura o module se necessário
+            if (window.module) module = window.module;
+            
             initRealTimeSystem(); 
         };
         
         socketScript.onerror = function() {
             console.error("❌ Não foi possível encontrar o servidor em " + API_BASE_URL);
             document.getElementById('socketStatus').innerHTML = 'Erro Conexão';
+            
+            // Restaura o module mesmo com erro
+            if (window.module) module = window.module;
         };
         
         document.head.appendChild(socketScript);
@@ -1049,49 +1061,6 @@
             }
             return originalFetch(url, options);
         };
-
-        // --- LÓGICA DE TEMPO REAL (SOCKET) ---
-        function initRealTimeSystem() {
-            if (typeof io !== 'undefined') {
-                // Conecta explicitamente no IP do servidor
-                const socket = io(API_BASE_URL);
-                const statusEl = document.getElementById('socketStatus');
-
-                socket.on('connect', () => {
-                    console.log(`🟢 [Socket] Conectado ao servidor ${API_BASE_URL}`);
-                    if(statusEl) {
-                        statusEl.innerHTML = '<div style="width:8px; height:8px; background:#10b981; border-radius:50%; box-shadow:0 0 5px #10b981;"></div> Online';
-                        statusEl.style.color = '#10b981';
-                    }
-                    // Recarrega dados ao conectar para garantir sincronia
-                    if(window.loadData) window.loadData();
-                });
-                
-                socket.on('disconnect', () => {
-                    if(statusEl) {
-                        statusEl.innerHTML = '<div style="width:8px; height:8px; background:#ef4444; border-radius:50%;"></div> Offline';
-                        statusEl.style.color = '#ef4444';
-                    }
-                });
-
-                // ATUALIZAÇÃO AUTOMÁTICA
-                socket.on('atualizar_sistema', (data) => {
-                    console.log("🔄 [Socket] Atualização recebida:", data);
-                    
-                    // Atualiza a tela que estiver aberta
-                    const activeView = document.querySelector('.view-section.active');
-                    if(activeView) {
-                        if (activeView.id === 'view-patio' && window.renderPatio) window.renderPatio();
-                        if (activeView.id === 'view-mapas' && window.renderMapList) window.renderMapList();
-                        if (activeView.id === 'view-materia-prima' && window.renderMateriaPrima) window.renderMateriaPrima();
-                        if (activeView.id === 'view-carregamento' && window.renderCarregamento) window.renderCarregamento();
-                        if (activeView.id === 'view-cadastros' && window.renderCadastros) window.renderCadastros();
-                    }
-                    
-                    if(window.checkNotifications) window.checkNotifications();
-                });
-            }
-        }
     </script>
 </body>
 

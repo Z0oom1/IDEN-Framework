@@ -84,10 +84,22 @@ function renderUserList() {
     tbody.innerHTML = '';
     usersData.forEach(u => {
         const isMe = u.username === loggedUser.username;
-        const btn = isMe ? '<span style="color:#999; font-size:0.8rem;">(Você)</span>' : `<button class="btn btn-edit btn-small" onclick="removeUser('${u.username}')" style="color:red; border-color:red;">Remover</button>`;
+        const removeBtn = isMe ? '<span style="color:#999; font-size:0.8rem;">(Você)</span>' : `<button class="btn btn-edit btn-small" onclick="removeUser('${u.username}')" style="color:red; border-color:red; margin-left:5px;">Remover</button>`;
+        const editPermsBtn = `<button class="btn btn-edit btn-small" onclick="openPermissionEditor('${u.username}')" title="Permissões"><i class="fas fa-key"></i></button>`;
+        
         let secDisplay = u.sector; 
         if (u.subType) secDisplay += ` (${u.subType})`;
-        tbody.innerHTML += `<tr><td><b>${u.username}</b></td><td>${u.role}</td><td>${secDisplay}</td><td>${btn}</td></tr>`;
+        
+        tbody.innerHTML += `
+            <tr>
+                <td><b>${u.username}</b></td>
+                <td>${u.role}</td>
+                <td>${secDisplay}</td>
+                <td style="display:flex; align-items:center;">
+                    ${editPermsBtn}
+                    ${removeBtn}
+                </td>
+            </tr>`;
     });
 }
 

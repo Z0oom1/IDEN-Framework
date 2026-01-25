@@ -148,6 +148,12 @@ function modalTruckOpen() {
         if (el) { el.value = ''; el.classList.remove('input-warning'); }
     });
 
+    // Add validation listeners dynamically
+    const nfEl = document.getElementById('tmpNF');
+    if (nfEl) {
+        nfEl.oninput = function() { this.value = Validators.onlyNumbers(this.value); };
+    }
+
     document.getElementById('addDestino').value = 'DOCA';
     document.getElementById('chkBalan').checked = false;
     document.getElementById('chkLaudo').checked = false;
@@ -201,6 +207,9 @@ function addTmpItem() {
     const nfEl = document.getElementById('tmpNF');
     const prodEl = document.getElementById('tmpProd');
     
+    // Validate NF before adding
+    if (nfEl) nfEl.value = Validators.onlyNumbers(nfEl.value);
+
     const nf = nfEl.value.toUpperCase().trim();
     const prodVal = prodEl.value.toUpperCase().trim();
 
@@ -288,7 +297,6 @@ function saveTruckAndMap() {
     const dest = document.getElementById('addDestino').value;
     const useCarrier = document.getElementById('chkUseCarrier').checked;
     const transpVal = useCarrier ? document.getElementById('inTransp').value.toUpperCase() : '';
-
     const laudo = document.getElementById('chkLaudo').checked;
     const balan = document.getElementById('chkBalan').checked;
 
@@ -306,23 +314,12 @@ function saveTruckAndMap() {
     };
     const sec = secMap[dest] || { n: 'OUTROS', c: 'OUT' };
     const id = Date.now().toString();
-    
-    // Mudança: Garantindo formato YYYY-MM-DD estável para filtragem
-    const brazilTime = getBrazilTime();
-    const todayStr = brazilTime.split('T')[0];
-    const isoDate = new Date().toISOString().split('T')[0];
-
+    const nowBrazil = getBrazilTime();
+    const todayStr = nowBrazil.split('T')[0];
     const dailyCount = patioData.filter(t => (t.chegada || '').startsWith(todayStr)).length;
     const seq = dailyCount + 1;
 
-    let fornName = '';
-    if (entryState.selectedSupplierId) {
-        const s = suppliersData.find(x => x.id === entryState.selectedSupplierId);
-        fornName = s ? s.nome : '';
-    } else {
-        fornName = document.getElementById('inForn').value.toUpperCase();
-    }
-
+    let fornName = entryState.selectedSupplierId ? (suppliersData.find(x => x.id === entryState.selectedSupplierId)?.nome || '') : document.getElementById('inForn').value.toUpperCase();
     const displayCompany = transpVal || fornName;
 
     patioData.push({
@@ -341,58 +338,20 @@ function saveTruckAndMap() {
         saidaNotified: false,
         comLaudo: laudo,
         releasedBy: null,
-        chegada: brazilTime,
-        dateRef: isoDate, // Novo campo para garantir exibição estável
+        chegada: nowBrazil,
+        dateRef: todayStr,
         saida: null,
         isProvisory: false,
         cargas: [{ numero: '1', produtos: tmpItems.map(i => ({ nome: i.prod, qtd: '-', nf: i.nf })) }]
     });
 
-    const mapRows = tmpItems.map((item, idx) => ({ 
-        id: id + '_' + idx, 
-        desc: item.prod, 
-        qty: '', 
-        qty_nf: '', 
-        nf: item.nf, 
-        forn: fornName, 
-        owners: {} 
-    }));
-    
-    for (let i = mapRows.length; i < 8; i++) {
-        mapRows.push({ id: id + '_x_' + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} });
-    }
+    const mapRows = tmpItems.map((item, idx) => ({ id: id + '_' + idx, desc: item.prod, qty: '', qty_nf: '', nf: item.nf, forn: fornName, owners: {} }));
+    for (let i = mapRows.length; i < 8; i++) mapRows.push({ id: id + '_x_' + i, desc: '', qty: '', qty_nf: '', nf: '', forn: '', owners: {} });
 
-    mapData.push({ 
-        id, 
-        date: todayStr, 
-        rows: mapRows, 
-        placa: placaVal, 
-        setor: sec.n, 
-        launched: false, 
-        signatures: {}, 
-        forceUnlock: false, 
-        divergence: null 
-    });
+    mapData.push({ id, date: todayStr, rows: mapRows, placa: placaVal, setor: sec.n, launched: false, signatures: {}, forceUnlock: false, divergence: null });
 
     if (balan) {
-        mpData.push({ 
-            id, 
-            date: todayStr, 
-            produto: tmpItems[0].prod, 
-            empresa: fornName, 
-            placa: placaVal, 
-            local: sec.n, 
-            chegada: brazilTime, 
-            entrada: null, 
-            tara: 0, 
-            bruto: 0, 
-            liq: 0, 
-            pesoNF: 0, 
-            difKg: 0, 
-            difPerc: 0, 
-            nf: tmpItems[0].nf, 
-            notes: '' 
-        });
+        mpData.push({ id, date: todayStr, produto: tmpItems[0].prod, empresa: fornName, placa: placaVal, local: sec.n, chegada: nowBrazil, entrada: null, tara: 0, bruto: 0, liq: 0, pesoNF: 0, difKg: 0, difPerc: 0, nf: tmpItems[0].nf, notes: '' });
     }
 
     saveAll();
@@ -527,6 +486,18 @@ function submitComplexRequest() {
 function renderPatio() {
     const filterEl = document.getElementById('patioDateFilter');
     const fd = filterEl ? filterEl.value : getBrazilTime().split('T')[0];
+    
+    // Fallback robusto: se não houver usuário logado, assume Portaria (acesso total de visualização)
+    const logged = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser : { role: 'Portaria', sector: 'Recebimento' };
+    
+    const uRole = (logged.role || 'Portaria').toLowerCase();
+    const uSector = (logged.sector || '').toLowerCase();
+    const uSubType = (logged.subType || '').toUpperCase();
+
+    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria' || uRole === 'user'; // 'user' genérico vê tudo por padrão se não for conferente
+    const isRecebimento = uSector === 'recebimento' || uRole.includes('encarregado');
+    
+    console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${uRole}, Sector=${uSector}`);
 
     ['ALM', 'GAVA', 'OUT', 'SAIU'].forEach(c => {
         const list = document.getElementById('list-' + c);
@@ -535,27 +506,37 @@ function renderPatio() {
         if (count && c !== 'SAIU') count.textContent = '0';
     });
 
-    const badge = document.getElementById('totalTrucksBadge');
-    if (badge) {
-        // Correção na filtragem do badge: usa split('T')[0] para comparar apenas a data YYYY-MM-DD
-        const dailyActiveCount = patioData.filter(x => {
-            const dataChegada = (x.chegada || '').split('T')[0];
-            return x.status !== 'SAIU' && dataChegada === fd;
-        }).length;
-        badge.innerText = dailyActiveCount;
-    }
-
     const list = patioData.filter(c => {
-        // Normalização da data de comparação para evitar erros de fuso horário
-        const dataCaminhao = (c.status === 'SAIU' ? (c.saida || '') : (c.chegada || '')).split('T')[0];
+        const dateMatch = c.status === 'SAIU' ? (c.saida || '').startsWith(fd) : (c.dateRef === fd || (c.chegada || '').split('T')[0] === fd);
         
-        // Fallback para o novo campo dateRef caso a string de chegada esteja corrompida
-        if (c.dateRef && dataCaminhao !== fd) {
-            return c.dateRef === fd;
+        if (!dateMatch) return false;
+        
+        // Regra de permissão:
+        // 1. Admin, Portaria e Recebimento veem tudo.
+        if (isAdmin || isRecebimento) return true;
+        
+        // 2. Conferentes veem apenas seus setores
+        if (uSector === 'conferente') {
+            if (!uSubType) return false; // Conferente sem subtipo não vê nada
+            
+            // ALM vê DOCA (ALM)
+            if (uSubType === 'ALM' && (c.localSpec.includes('ALM') || c.local === 'ALM')) return true;
+            // GAVA vê GAVA
+            if (uSubType === 'GAVA' && (c.localSpec.includes('GAVA') || c.local === 'GAVA')) return true;
+            // Outros conferentes veem seus setores específicos
+            if (c.localSpec.toUpperCase().includes(uSubType)) return true;
+            // Conferentes 'OUT' veem OUTROS
+            if (uSubType === 'OUT' && c.local === 'OUT') return true;
+            
+            return false;
         }
 
-        return dataCaminhao === fd;
+        // Se chegou aqui e não é admin/recebimento nem conferente, assume visualização total (fallback para segurança)
+        return true; 
     }).sort((a, b) => new Date(a.chegada) - new Date(b.chegada));
+
+    const badge = document.getElementById('totalTrucksBadge');
+    if (badge) badge.innerText = list.filter(x => x.status !== 'SAIU').length;
 
     list.forEach(c => {
         const isSaiu = c.status === 'SAIU';
@@ -572,44 +553,56 @@ function renderPatio() {
         card.className = 'truck-card';
         if (c.isProvisory) card.style.borderLeft = "4px solid #f59e0b";
 
-        card.oncontextmenu = (e) => { e.preventDefault(); openTruckContextMenu(e.pageX, e.pageY, c.id); };
-
-        let displayName = c.empresa;
-        if (c.supplierId) {
-            const s = suppliersData.find(x => x.id === c.supplierId);
-            if (s) displayName = s.nome;
-        }
-
-        const laudoHtml = !isSaiu ? `<div style="font-size:0.7rem; font-weight:bold; margin-top:5px; color:${c.comLaudo ? '#16a34a' : '#dc2626'}">${c.comLaudo ? '<i class="fas fa-check-circle"></i> COM LAUDO' : '<i class="fas fa-times-circle"></i> SEM LAUDO'}</div>` : '';
-
         let btn = '';
-        if (!isSaiu) {
+        // Correção: usar uRole definido no início da função em vez de userRole global indefinido
+        const roleUpper = uRole.toUpperCase();
+        const sectorUpper = uSector.toUpperCase();
+        const subTypeUpper = uSubType.toUpperCase();
+        
+        // Permissões de Ação (Botões):
+        // 1. Admin, Portaria e Recebimento (Setor ou Cargo) têm permissão total ou ampla
+        // 2. Conferentes têm permissão apenas se o caminhão estiver no seu setor (SubType bate com LocalSpec ou Local)
+        
+        const isSuperUser = roleUpper.includes('ADMIN') || roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || sectorUpper === 'RECEBIMENTO';
+        
+        let canAction = isSuperUser;
+        
+        if (!canAction && subTypeUpper) {
+             // Verifica se o subtipo do conferente está na descrição do local (ex: 'ALM' em 'DOCA (ALM)')
+             // Ou caso especial para 'OUT'
+             if (subTypeUpper === 'OUT' && c.local === 'OUT') canAction = true;
+             else if (c.localSpec.toUpperCase().includes(subTypeUpper)) canAction = true;
+        }
+        
+        if (!isSaiu && canAction) {
             if (c.status === 'FILA') btn = `<button onclick="changeStatus('${c.id}','LIBERADO')" class="btn btn-save" style="width:100%; margin-top:5px;">CHAMAR</button>`;
             else if (c.status === 'LIBERADO') btn = `<button onclick="changeStatus('${c.id}','ENTROU')" class="btn btn-launch" style="width:100%; margin-top:5px;">ENTRADA</button>`;
             else if (c.status === 'ENTROU') btn = `<button onclick="changeStatus('${c.id}','SAIU')" class="btn btn-edit" style="width:100%; margin-top:5px;">SAÍDA</button>`;
         }
 
         card.innerHTML = `
-            <div class="card-basic">
+            <div class="card-basic" style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <div class="card-company">${displayName} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span> ${c.isProvisory ? '<span style="font-size:0.6rem; background:orange; color:white; padding:2px">REQ</span>' : ''}</div>
+                    <div class="card-company">${c.empresa} <span style="font-weight:normal; font-size:0.8em; color:#666;">#${c.sequencia || ''}</span></div>
                     <small>${c.placa} • ${(c.chegada || '').slice(11, 16)}</small>
                     <div class="sector-tag">${c.localSpec}</div>
-                    ${laudoHtml}
                 </div>
+                <i class="fas fa-chevron-down" style="color:#aaa; font-size:0.9rem; transition: transform 0.2s;"></i>
             </div>
             <div class="status-badge st-${c.status === 'FILA' ? 'wait' : (c.status === 'LIBERADO' ? 'called' : (c.status === 'ENTROU' ? 'ok' : 'out'))}">${c.status}</div>
             <div class="card-expanded-content" style="display:none">
-                ${(c.cargas && c.cargas[0] && c.cargas[0].produtos ? c.cargas[0].produtos.map(p => `<div>${p.nome}</div>`).join('') : '')}
+                ${(c.cargas?.[0]?.produtos?.map(p => `<div>${p.nome}</div>`).join('') || '')}
                 ${btn}
             </div>
         `;
-
-        card.onclick = (e) => {
-            if (e.target.tagName !== 'BUTTON') {
-                const exp = card.querySelector('.card-expanded-content');
-                exp.style.display = exp.style.display === 'none' ? 'block' : 'none';
-            }
+        card.onclick = (e) => { 
+            if (e.target.tagName !== 'BUTTON') { 
+                const exp = card.querySelector('.card-expanded-content'); 
+                const icon = card.querySelector('.fa-chevron-down');
+                const isHidden = exp.style.display === 'none';
+                exp.style.display = isHidden ? 'block' : 'none';
+                if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            } 
         };
         container.appendChild(card);
     });

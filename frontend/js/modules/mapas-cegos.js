@@ -96,6 +96,8 @@ function renderRows(m) {
                 if (role === 'receb' && !isRecebimento) ro = true;
             }
             let val = r[f];
+            if (val === undefined || val === null) val = '';
+
             if (isConferente && f === 'qty_nf') { val = '---'; ro = true; }
 
             if (f === 'desc') {

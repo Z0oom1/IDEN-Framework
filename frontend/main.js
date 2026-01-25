@@ -6,7 +6,7 @@ const isDev = process.env.npm_lifecycle_event === "dev";
 
 // --- CONFIGURAÇÃO DE REDE ---
 // Coloque aqui o MESMO IP que você colocou no arquivo frontend/js/config.js
-const SERVER_IP = "192.168.0.100"; // <--- ALTERE AQUI PARA O SEU IP
+const SERVER_IP = "localhost"; // <--- ALTERE AQUI PARA O SEU IP
 const SERVER_PORT = 2006;
 const VITE_PORT = 5173;
 
