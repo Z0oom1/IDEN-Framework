@@ -95,7 +95,7 @@
             <a class="menu-item" id="menuNotif" onclick="navTo('notificacoes', this)"><i class="fas fa-bell"></i>
                 Notificações <span class="notification-badge" id="badgeNotif">0</span></a>
             <a class="menu-item" onclick="navTo('perfil', this)"><i class="fas fa-user-circle"></i> Perfil</a>
-            <a id="menuAdmin" class="menu-item" onclick="navTo('admin', this)" style="display:none;"><i class="fas fa-user-shield"></i> Admin / Permissões</a>
+
             <div style="margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1)">
                 <a class="menu-item" onclick="navTo('configuracoes', this)"><i class="fas fa-cog"></i> Configurações</a>
             </div>
@@ -504,72 +504,7 @@
             <div id="profileContent"></div>
         </div>
 
-        <div id="view-admin" class="view-section">
-            <div class="settings-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="margin:0;"><i class="fas fa-user-shield"></i> Administração de Perfis e Permissões</h3>
-                    <div id="adminLogBadge" style="font-size:0.75rem; color:var(--text-muted);">Aguardando ação...</div>
-                </div>
-                
-                <div style="display:grid; grid-template-columns: 250px 1fr; gap:20px;">
-                    <div style="border-right: 1px solid #eee; padding-right:15px;">
-                        <h5 style="margin-top:0;">Perfis do Sistema</h5>
-                        <div id="adminProfileList" style="display:flex; flex-direction:column; gap:5px;">
-                            <!-- Perfis renderizados via JS -->
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div id="adminPermissionEditor" style="display:none;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:var(--bg-input); padding:10px; border-radius:6px;">
-                                <div>
-                                    <span style="font-size:0.8rem; color:#64748b; font-weight:bold;">EDITANDO PERFIL:</span>
-                                    <span id="adminCurrentProfileName" style="font-weight:bold; color:var(--primary); margin-left:5px;">-</span>
-                                </div>
-                                <button class="btn btn-save btn-small" onclick="savePermissions()"><i class="fas fa-save"></i> Salvar Permissões</button>
-                            </div>
-                            
-                            <div id="adminSectorConfig" style="margin-bottom:20px; padding:15px; background:var(--bg-card); border:1px solid #e2e8f0; border-radius:8px; display:none;">
-                                <h5 style="margin-top:0; margin-bottom:10px;"><i class="fas fa-sitemap"></i> Hierarquia e Setorização</h5>
-                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                                    <div>
-                                        <label style="font-size:0.8rem; font-weight:bold;">Área Principal</label>
-                                        <select id="adminMainSector" class="form-input-styled" onchange="updateSubSectorOptions(); renderModulePermissions();">
-                                            <option value="Recebimento">Recebimento (Acesso Global)</option>
-                                            <option value="Conferencia">Conferência (Acesso Restrito)</option>
-                                        </select>
-                                    </div>
-                                    <div id="adminSubSectorContainer">
-                                        <label style="font-size:0.8rem; font-weight:bold;">Sub-Setor / Especialidade</label>
-                                        <select id="adminSubSector" class="form-input-styled" onchange="renderModulePermissions()">
-                                            <option value="Infraestrutura">Infraestrutura</option>
-                                            <option value="Manutencao">Manutenção</option>
-                                            <option value="Laboratorio">Laboratório</option>
-                                            <option value="Almoxarifado">Almoxarifado</option>
-                                            <option value="Producao">Produção</option>
-                                            <option value="Outros">Outros</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <p style="font-size:0.75rem; color:#64748b; margin-top:10px; line-height:1.4;">
-                                    * <b>Recebimento:</b> Vê tudo, exceto Dashboard.<br>
-                                    * <b>Conferência:</b> Vê apenas dados do seu próprio sub-setor.
-                                </p>
-                            </div>
 
-                            <div id="adminModulesContainer" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                                <!-- Módulos e permissões renderizados via JS -->
-                            </div>
-                        </div>
-                        
-                        <div id="adminEmptyState" style="text-align:center; padding:50px; color:#94a3b8;">
-                            <i class="fas fa-mouse-pointer" style="font-size:3rem; margin-bottom:15px; opacity:0.3;"></i>
-                            <p>Selecione um perfil ao lado para gerenciar suas permissões.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <div id="view-configuracoes" class="view-section">
             <h2 style="margin-bottom:20px;">Configurações</h2>

@@ -6,15 +6,7 @@ function toggleMobileMenu() { const sb = document.querySelector('.main-sidebar')
 function toggleMapListMobile() { const mm = document.getElementById('mobileMapList'); if (mm) mm.classList.toggle('open'); }
 
 function navTo(view, el) {
-    // Verificar permissão de visualização (exceto para Admin que tem acesso total)
-    if (view !== 'perfil' && view !== 'configuracoes' && view !== 'admin') {
-        if (!checkPermission(view, 'view')) {
-            alert('Acesso negado: Você não tem permissão para acessar este módulo.');
-            return;
-        }
-    }
-
-    // Bloqueia acesso ao cadastro para usuários do almoxarifado (Regra Legada)
+    // Bloqueia acesso ao cadastro para usuários do almoxarifado
     if (view === 'cadastros' && typeof userSubType !== 'undefined' && userSubType === 'ALM') {
         alert('Acesso negado: Usuários do almoxarifado não têm permissão para acessar cadastros.');
         return;
@@ -65,7 +57,6 @@ function navTo(view, el) {
     if (view === 'cadastros') renderCadastros();
     if (view === 'notificacoes') renderRequests();
     if (view === 'perfil') renderProfileArea();
-    if (view === 'admin') renderAdminArea();
     if (view === 'dashboard') { renderDashboard(); }
     if (view === 'configuracoes') updatePermissionStatus();
 
@@ -106,63 +97,6 @@ function checkElectronEnvironment() {
             control.style.display = 'none';
         }
     });
-
-    // Atualizar visibilidade dos menus baseada em permissões
-    updateMenuVisibility();
-}
-
-function updateMenuVisibility() {
-    // Exibir menu Admin apenas para Administradores
-    const mAdmin = document.getElementById('menuAdmin');
-    if (mAdmin) mAdmin.style.display = isAdmin ? 'flex' : 'none';
-
-    // Obter hierarquia do funcionário
-    const perms = systemPermissions[loggedUser.role] || {};
-    const mainSector = perms.mainSector || loggedUser.sector || '';
-    const isUserRecebimento = mainSector === 'Recebimento';
-
-    // Aplicar restrições de permissões granulares nos menus para usuários não-admin
-    if (!isAdmin) {
-        APP_MODULES.forEach(mod => {
-            const menuEl = document.querySelector(`.menu-item[onclick*="'${mod.id}'"]`);
-            if (menuEl) {
-                // 1. Regra de Dashboard: Apenas Encarregados e ADM
-                if (mod.id === 'dashboard' && !loggedUser.role.toLowerCase().includes('encarregado')) {
-                    menuEl.style.display = 'none';
-                    return;
-                }
-
-                // 2. Regra de Permissões Granulares (ADM configurou)
-                if (!checkPermission(mod.id, 'view')) {
-                    menuEl.style.display = 'none';
-                    return;
-                }
-
-                // 3. Regras de Hierarquia (Recebimento vs Conferência)
-                if (loggedUser.role === 'Funcionario') {
-                    if (isUserRecebimento) {
-                        // Recebimento vê tudo exceto Dashboard (já tratado acima)
-                        menuEl.style.display = 'flex';
-                    } else {
-                        // Conferência vê: Fila, Mapas, Relatórios, Produtos, Notificações, Perfil
-                        const allowedForConf = ['patio', 'mapas', 'relatorios', 'produtos', 'notificacoes', 'perfil'];
-                        if (allowedForConf.includes(mod.id)) {
-                            menuEl.style.display = 'flex';
-                        } else {
-                            menuEl.style.display = 'none';
-                        }
-                    }
-                } else {
-                    // Respeitar regras legadas de visibilidade para outros perfis
-                    if (mod.id === 'patio' && !isRecebimento) {
-                        menuEl.style.display = 'none';
-                    } else {
-                        menuEl.style.display = 'flex';
-                    }
-                }
-            }
-        });
-    }
 }
 
 // Inicializa a visibilidade dos controles ao carregar o módulo

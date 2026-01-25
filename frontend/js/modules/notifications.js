@@ -178,13 +178,8 @@ function confirmNotification(type, id) {
 function updateBadge() { const c = requests.filter(r => r.status === 'pending' && r.target === loggedUser.username).length; const b = document.getElementById('badgeNotif'); if (c > 0) { b.innerText = c; b.style.display = 'inline-block'; } else b.style.display = 'none'; }
 
 function renderRequests() {
-    if (!checkPermission('notificacoes', 'view')) {
-        const l = document.getElementById('reqList');
-        if (l) l.innerHTML = '<p style="padding:15px; color:#999; text-align:center;">Você não tem permissão para visualizar requisições.</p>';
-        return;
-    }
-
     const l = document.getElementById('reqList');
+    if (!l) return;
     l.innerHTML = '';
     const h = document.getElementById('historyList');
     h.innerHTML = '';

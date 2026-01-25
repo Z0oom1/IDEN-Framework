@@ -22,40 +22,23 @@ function renderMapList() {
     const l = document.getElementById('mapList');
     l.innerHTML = '';
 
-    // Obter permissões e setor do usuário logado
-    const logged = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser : { role: 'Portaria', sector: 'Recebimento' };
-    const uRole = (logged.role || 'Portaria').toLowerCase();
-    const perms = systemPermissions[logged.role] || {};
-    const mainSector = perms.mainSector || logged.sector || '';
-    const subSector = perms.subSector || logged.subType || '';
-    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria';
-    const isRecebimento = mainSector === 'Recebimento' || uRole.includes('encarregado');
-
     const filteredMaps = mapData.filter(m => {
-        // 1. Filtro de Data
         if (m.date !== fd) return false;
 
-        // 2. Filtro de Hierarquia/Setor (Apenas para Funcionários)
-        if (logged.role === 'Funcionario') {
-            if (isRecebimento) return true; // Recebimento vê tudo
-            
-            if (!subSector) return false; // Conferente sem subtipo não vê nada
-            
-            const subUpper = subSector.toUpperCase();
+        // Regra de Visibilidade por Setor
+        if (typeof isConferente !== 'undefined' && isConferente && typeof userSubType !== 'undefined' && userSubType) {
+            const uSubType = userSubType.toUpperCase();
             const mapSectorUpper = (m.setor || '').toUpperCase();
-            
-            // Especial para Almoxarifado (ALM)
-            if ((subUpper === 'ALMOXARIFADO' || subUpper === 'ALM') && mapSectorUpper.includes('ALM')) return true;
 
-            // Verificação genérica por nome de setor (Remove acentos para comparação)
-            const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-            if (normalize(mapSectorUpper).includes(normalize(subUpper))) return true;
+            // Almoxarifado vê mapas ALM
+            if (uSubType === 'ALM' && mapSectorUpper.includes('ALM')) return true;
+            // Gava vê mapas GAVA
+            if (uSubType === 'GAVA' && mapSectorUpper.includes('GAVA')) return true;
+            // Outros conferentes veem seus setores específicos
+            if (mapSectorUpper.includes(uSubType)) return true;
 
             return false;
         }
-
-        // 3. Admin e Recebimento veem tudo por padrão
-        if (isAdmin || isRecebimento) return true;
 
         return true;
     }).slice().reverse();

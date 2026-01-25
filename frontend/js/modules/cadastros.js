@@ -11,10 +11,6 @@ let contextCadId = null;
 // ===================================================================================
 
 function openUnifiedApprovalModal(reqId) {
-    if (!checkPermission('notificacoes', 'edit')) {
-        alert('Acesso Negado: Você não tem permissão para aprovar requisições.');
-        return;
-    }
     const req = requests.find(r => r.id === reqId);
     if (!req) return;
 

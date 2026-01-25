@@ -487,20 +487,7 @@ function renderPatio() {
     const filterEl = document.getElementById('patioDateFilter');
     const fd = filterEl ? filterEl.value : getBrazilTime().split('T')[0];
     
-    // Fallback robusto: se não houver usuário logado, assume Portaria (acesso total de visualização)
-    const logged = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser : { role: 'Portaria', sector: 'Recebimento' };
-    
-    const uRole = (logged.role || 'Portaria').toLowerCase();
-    
-    // Obter permissões granulares e hierarquia do sistema
-    const perms = systemPermissions[logged.role] || {};
-    const mainSector = perms.mainSector || logged.sector || '';
-    const subSector = perms.subSector || logged.subType || '';
-
-    const isAdmin = uRole.includes('admin') || uRole.includes('administrador') || uRole === 'portaria';
-    const isRecebimento = mainSector === 'Recebimento' || uRole.includes('encarregado');
-    
-    console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${uRole}, Sector=${uSector}`);
+    console.log(`RenderPatio: Total Data=${patioData.length}, Date=${fd}, Role=${typeof isConferente !== 'undefined' ? (isConferente ? 'Conf' : 'Port') : '?'}`);
 
     ['ALM', 'GAVA', 'OUT', 'SAIU'].forEach(c => {
         const list = document.getElementById('list-' + c);
@@ -515,38 +502,30 @@ function renderPatio() {
         if (!dateMatch) return false;
         
         // Regra de permissão:
-        // 1. Admin, Portaria e Recebimento veem tudo.
-        if (isAdmin || isRecebimento) return true;
+        // 1. Recebimento e Portaria veem tudo
+        if (typeof isRecebimento !== 'undefined' && isRecebimento) return true;
+        if (typeof isAdmin !== 'undefined' && isAdmin) return true;
         
         // 2. Conferentes veem apenas seus setores
-        if (mainSector === 'Conferencia' || logged.role === 'Funcionario') {
-            if (isRecebimento) return true; // Se o funcionário for do recebimento, vê tudo
+        if (typeof isConferente !== 'undefined' && isConferente) {
+            if (typeof userSubType === 'undefined' || !userSubType) return true; // Se não tem subtipo, vê tudo (fallback)
             
-            if (!subSector) return false; // Conferente sem subtipo não vê nada
-            
-            const subUpper = subSector.toUpperCase();
+            const uSubType = userSubType.toUpperCase();
             const localSpecUpper = (c.localSpec || '').toUpperCase();
-            
-            // ALM vê DOCA (ALM)
-            if (subUpper === 'ALMOXARIFADO' || subUpper === 'ALM') {
-                if (localSpecUpper.includes('ALM') || c.local === 'ALM') return true;
-            }
-            
-            // GAVA vê GAVA
-            if (subUpper === 'GAVA' && (localSpecUpper.includes('GAVA') || c.local === 'GAVA')) return true;
 
-            // Verificação genérica por nome de setor (Ex: LABORATÓRIO, INFRAESTRUTURA)
-            // Removemos acentos para comparação robusta
-            const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-            if (normalize(localSpecUpper).includes(normalize(subUpper))) return true;
+            // ALM vê DOCA (ALM)
+            if (uSubType === 'ALM' && (localSpecUpper.includes('ALM') || c.local === 'ALM')) return true;
+            // GAVA vê GAVA
+            if (uSubType === 'GAVA' && (localSpecUpper.includes('GAVA') || c.local === 'GAVA')) return true;
             
-            // Fallback para 'OUTROS'
-            if (subUpper === 'OUTROS' && c.local === 'OUT') return true;
+            // Outros conferentes veem seus setores específicos (LAB, INFRA, etc)
+            if (localSpecUpper.includes(uSubType)) return true;
+            
+            // Conferentes 'OUT' veem OUTROS
+            if (uSubType === 'OUT' && c.local === 'OUT') return true;
             
             return false;
         }
-
-        // Se chegou aqui e não é admin/recebimento nem conferente, assume visualização total (fallback para segurança)
         return true; 
     }).sort((a, b) => new Date(a.chegada) - new Date(b.chegada));
 
