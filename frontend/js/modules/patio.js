@@ -580,13 +580,14 @@ function renderPatio() {
         // 1. Admin, Portaria e Recebimento (Setor ou Cargo) têm permissão total ou ampla
         // 2. Conferentes têm permissão apenas se o caminhão estiver no seu setor (SubType bate com LocalSpec ou Local)
         
-        const isSuperUser = roleUpper.includes('ADMIN') || roleUpper === 'PORTARIA' || roleUpper === 'RECEBIMENTO' || roleUpper === 'OPERADOR' || sectorUpper === 'RECEBIMENTO';
+        // Regra Restrita: Apenas ADMIN ou CONFERENTE do setor específico pode realizar ações (Chamar/Entrada/Saída)
+        // Recebimento, Portaria e Operadores (Caio/Balança) NÃO podem liberar.
+        let canAction = false;
         
-        let canAction = isSuperUser;
-        
-        if (!canAction && subTypeUpper) {
-             // Verifica se o subtipo do conferente está na descrição do local (ex: 'ALM' em 'DOCA (ALM)')
-             // Ou caso especial para 'OUT'
+        if (roleUpper.includes('ADMIN')) {
+            canAction = true;
+        } else if (roleUpper === 'CONFERENTE' && subTypeUpper) {
+             // Verifica se o conferente é do setor do caminhão
              if (subTypeUpper === 'OUT' && c.local === 'OUT') canAction = true;
              else if ((c.localSpec || '').toUpperCase().includes(subTypeUpper)) canAction = true;
         }
