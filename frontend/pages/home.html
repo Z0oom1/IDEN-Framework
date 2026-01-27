@@ -62,9 +62,30 @@
     </div>
 
     <script>
-        const loggedUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
-        if (!loggedUser && window.location.protocol !== 'file:') window.location.href = 'login.html';
-        const safeUser = loggedUser || { username: 'Admin', sector: 'recebimento', role: 'Administrador', subType: null };
+        // Sistema de Recuperação de Sessão (Essencial para acesso via IP/Celular)
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('t');
+            
+            if (urlToken) {
+                sessionStorage.setItem('aw_token', urlToken);
+                localStorage.setItem('aw_token', urlToken);
+                // Remove o token da URL para ficar limpo
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            let user = JSON.parse(sessionStorage.getItem('loggedInUser') || localStorage.getItem('loggedInUser') || 'null');
+            
+            if (!user && window.location.protocol !== 'file:') {
+                console.warn("Usuário não autenticado. Redirecionando...");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            window.loggedUser = user;
+        })();
+
+        const safeUser = window.loggedUser || { username: 'Admin', sector: 'recebimento', role: 'Administrador', subType: null };
         const userSector = (safeUser.sector || '').toLowerCase();
         const userRoleRaw = (safeUser.role || '').toString().toLowerCase();
         const userSubType = safeUser.subType;

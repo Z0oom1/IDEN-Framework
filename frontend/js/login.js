@@ -52,8 +52,7 @@ async function fazerLogin() {
             if (resp.ok) {
                 const body = await resp.json();
                 const serverUser = body.user || { username: userIn };
-                serverUser.token = body.token;
-                loginComUsuario(serverUser);
+                loginComUsuario(serverUser, body.token);
                 return;
             } else {
                 const error = await resp.json();
@@ -71,13 +70,27 @@ async function fazerLogin() {
 }
 
 // Login: armazenamento de sessão e redirecionamento
-function loginComUsuario(user) {
-    if (user.token) sessionStorage.setItem('aw_token', user.token);
-    sessionStorage.setItem('loggedInUser', JSON.stringify(user));
+function loginComUsuario(user, token) {
+    const finalToken = token || user.token;
     
-    // REDIRECIONAMENTO CORRIGIDO PARA VITE
-    // Como o login está em /pages/login.html, o home está na mesma pasta.
-    window.location.href = 'home.html'; 
+    // Limpa sessões antigas
+    sessionStorage.clear();
+    
+    // Salva novas credenciais
+    if (finalToken) {
+        localStorage.setItem('aw_token', finalToken);
+        sessionStorage.setItem('aw_token', finalToken);
+    }
+    
+    const userData = JSON.stringify(user);
+    localStorage.setItem('loggedInUser', userData);
+    sessionStorage.setItem('loggedInUser', userData);
+    
+    // Redirecionamento com Token na URL para garantir acesso em celulares/redes locais
+    const target = finalToken ? `home.html?t=${finalToken}` : 'home.html';
+    
+    console.log("Login OK. Redirecionando...");
+    window.location.href = target;
 }
 
 // --- INTERFACE (SWITCHER E REGISTRO) ---

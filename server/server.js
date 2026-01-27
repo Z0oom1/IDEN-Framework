@@ -19,11 +19,20 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'DELETE', 'PUT'] },
+  cors: { 
+    origin: true, // Permite qualquer origem
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
+    credentials: true
+  },
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Permite qualquer origem (IP ou Localhost)
+  credentials: true,
+  methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
@@ -54,10 +63,12 @@ app.post('/api/auth/login', async (req, res) => {
     const { user, token } = authResult;
 
     // Set secure HTTP-only cookie
+    // Ajustado para máxima compatibilidade em rede local via IP
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      httpOnly: false, // Permitir que o JS leia se necessário (fallback)
+      secure: false,   // Essencial para HTTP (sem SSL)
+      sameSite: 'Lax',
+      path: '/',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
