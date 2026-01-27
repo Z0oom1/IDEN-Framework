@@ -83,11 +83,16 @@ export async function createDefaultUsers() {
   const database = await getDb();
   try {
     const defaultUsers = [
-      { username: 'admin', password: '123456', name: 'Administrador', role: 'admin' },
-      { username: 'encarregado', password: '123456', name: 'Encarregado', role: 'encarregado' },
-      { username: 'operador', password: '123456', name: 'Operador', role: 'operador' },
-      { username: 'conferente', password: '123456', name: 'Conferente', role: 'conferente' },
-      { username: 'Caio', password: '123', name: 'Caio', role: 'operador' }
+      { username: 'Admin', password: '123', name: 'Administrador', role: 'admin', sector: 'recebimento' },
+      { username: 'Fabricio', password: '123', name: 'Fabricio', role: 'conferente', sector: 'conferente', subType: 'ALM' },
+      { username: 'Clodoaldo', password: '123', name: 'Clodoaldo', role: 'conferente', sector: 'conferente', subType: 'ALM' },
+      { username: 'Guilherme', password: '123', name: 'Guilherme', role: 'conferente', sector: 'conferente', subType: 'GAVA' },
+      { username: 'Wayner', password: '123', name: 'Wayner', role: 'conferente', sector: 'conferente', subType: 'INFRA' },
+      { username: 'Outros', password: '123', name: 'Outros', role: 'conferente', sector: 'conferente', subType: 'OUT' },
+      { username: 'Caio', password: '123', name: 'Caio', role: 'operador', sector: 'recebimento' },
+      { username: 'Balanca', password: '123', name: 'Balanca', role: 'operador', sector: 'recebimento' },
+      { username: 'EncarRec', password: 'enc123', name: 'Encarregado Recebimento', role: 'encarregado', sector: 'recebimento' },
+      { username: 'EncarConf', password: 'enc123', name: 'Encarregado Conferencia', role: 'encarregado', sector: 'conferente' }
     ];
 
     for (const user of defaultUsers) {
@@ -95,8 +100,8 @@ export async function createDefaultUsers() {
       if (!existing) {
         const hashedPassword = await hashPassword(user.password);
         await database.run(
-          'INSERT INTO users (username, password, name, role, isActive) VALUES (?, ?, ?, ?, TRUE)',
-          [user.username, hashedPassword, user.name, user.role]
+          'INSERT INTO users (username, password, name, role, sector, subType, isActive) VALUES (?, ?, ?, ?, ?, ?, TRUE)',
+          [user.username, hashedPassword, user.name, user.role, user.sector, user.subType]
         );
         console.log(`[Database] Created user: ${user.username}`);
       }
@@ -108,7 +113,8 @@ export async function createDefaultUsers() {
 
 export async function getUserByUsername(username) {
   const database = await getDb();
-  return await database.get('SELECT * FROM users WHERE username = ?', [username]);
+  // Usando COLLATE NOCASE para busca case-insensitive no SQLite
+  return await database.get('SELECT * FROM users WHERE username = ? COLLATE NOCASE', [username]);
 }
 
 export async function getUserById(id) {
