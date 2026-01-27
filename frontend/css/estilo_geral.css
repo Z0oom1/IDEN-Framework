@@ -2721,3 +2721,234 @@ body.fast-mode .mc-item {
         font-size: 1rem;
     }
 }
+
+/* ==========================================================================
+   WILSON UI 4.0 - MODERN MOBILE OVERHAUL
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    :root {
+        --header-height: 60px;
+    }
+
+    body {
+        padding-top: 0; /* Remove padding do titlebar no mobile para ganhar espaço */
+    }
+
+    #titlebar {
+        display: none; /* Esconde barra de título desktop no mobile */
+    }
+
+    /* Barra Superior Mobile Moderna */
+    .mobile-header-bar {
+        position: sticky;
+        top: 0;
+        height: var(--header-height);
+        background: var(--secondary);
+        display: flex;
+        align-items: center;
+        padding: 0 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        z-index: 2000;
+    }
+
+    .mobile-header-bar div {
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    /* Menu Lateral (Drawer) mais suave */
+    .main-sidebar {
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        left: -280px;
+        background: #1a1a1a;
+        box-shadow: none;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .main-sidebar.show-mobile {
+        left: 0;
+        box-shadow: 0 0 40px rgba(0,0,0,0.7);
+    }
+
+    /* Overlay para fechar menu ao clicar fora */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 2999;
+    }
+
+    .main-sidebar.show-mobile + .sidebar-overlay {
+        display: block;
+    }
+
+    /* Ajuste de Seções */
+    .view-section {
+        padding: 15px;
+        padding-bottom: 100px; /* Espaço para o FAB */
+    }
+
+    /* Títulos de Página Mobile */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    /* Kanban Mobile - Cards mais bonitos */
+    .board-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .board-col {
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .col-header {
+        padding: 12px 15px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .col-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: none; /* Permite scroll natural da página */
+    }
+
+    .truck-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        margin-bottom: 0;
+    }
+
+    .truck-card h4 {
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        color: var(--primary);
+    }
+
+    .truck-card p {
+        font-size: 0.85rem;
+        margin: 3px 0;
+    }
+
+    /* Botões Mobile - Maiores para facilitar o toque */
+    .btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+        width: 100%; /* Botões ocupam largura total no mobile */
+    }
+
+    .fab {
+        width: 60px;
+        height: 60px;
+        bottom: 30px;
+        right: 20px;
+        font-size: 28px;
+        box-shadow: 0 8px 20px rgba(185, 28, 28, 0.5);
+    }
+
+    /* Modais Mobile */
+    .modal-box {
+        width: 95% !important;
+        max-height: 90vh;
+        padding: 20px;
+        border-radius: 20px;
+        margin: 10px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .modal-body {
+        padding: 10px 0;
+    }
+
+    /* Grids de Formulário Mobile */
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-group {
+        width: 100% !important;
+    }
+
+    input, select, textarea {
+        font-size: 16px !important; /* Evita zoom automático no iOS */
+        padding: 12px !important;
+    }
+
+    /* Tabelas Mobile (Transformar em Cards) */
+    .responsive-table thead {
+        display: none;
+    }
+
+    .responsive-table tr {
+        display: block;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 10px;
+    }
+
+    .responsive-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 5px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: right;
+    }
+
+    .responsive-table td:last-child {
+        border-bottom: none;
+    }
+
+    .responsive-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        text-align: left;
+    }
+}
+
+/* Ajustes finos para telas muito pequenas */
+@media (max-width: 380px) {
+    .mobile-header-bar div {
+        font-size: 0.75rem;
+    }
+    
+    .truck-card h4 {
+        font-size: 1rem;
+    }
+}

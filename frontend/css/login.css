@@ -439,3 +439,47 @@ button:hover {
         transform: translateY(-5%);
     }
 }
+/* ==========================================================================
+   RESPONSIVIDADE LOGIN
+   ========================================================================== */
+@media (max-width: 480px) {
+    body {
+        padding-top: 0;
+        background: #fff; /* Fundo branco no mobile para foco total */
+    }
+
+    body::after {
+        display: none;
+    }
+
+    #titlebar {
+        display: none;
+    }
+
+    .modal {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border-top: none;
+        box-shadow: none;
+        padding: 30px;
+        justify-content: center;
+    }
+
+    .logo-img {
+        width: 150px;
+    }
+
+    input, button {
+        font-size: 16px !important;
+        padding: 15px;
+    }
+
+    .fab-login {
+        bottom: 20px;
+        left: 20px;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+}
