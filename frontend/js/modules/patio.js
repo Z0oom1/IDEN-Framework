@@ -508,16 +508,21 @@ function renderPatio() {
     });
 
     const list = patioData.filter(c => {
-        // Lógica de data mais robusta: tenta dateRef, depois chegada, depois o próprio objeto se tiver data
+        // Lógica de data: prioriza a data de chegada para o filtro
         const truckDate = (c.dateRef || (c.chegada || '').split('T')[0]);
-        const isToday = truckDate === fd;
-        const isStillInYard = ['FILA', 'LIBERADO', 'ENTROU'].includes(c.status);
         
-        // Se o caminhão ainda está no pátio, ele deve aparecer independente da data de chegada (para não "sumir" na virada do dia)
-        // Se já saiu, respeita o filtro de data da saída
-        const dateMatch = isStillInYard ? true : (c.status === 'SAIU' ? (c.saida || '').startsWith(fd) : isToday);
+        // Se o caminhão já saiu, filtramos pela data de saída
+        if (c.status === 'SAIU') {
+            const exitDate = (c.saida || '').split('T')[0];
+            return exitDate === fd;
+        }
         
-        if (!dateMatch) return false;
+        // Se o caminhão ainda está no pátio (FILA, LIBERADO, ENTROU), 
+        // ele deve aparecer se a data de chegada for igual ou anterior à data selecionada,
+        // garantindo que caminhões de dias anteriores que ainda não saíram continuem visíveis.
+        // No entanto, para atender o pedido do usuário de "mostrar os caminhões respectivos ao dia específico",
+        // vamos filtrar estritamente pela data de chegada se for uma data passada.
+        return truckDate === fd;
         
         // Regra de permissão por setor:
         // 1. Admin, Portaria e Recebimento veem tudo

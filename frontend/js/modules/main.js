@@ -80,6 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
     
+    // Inicializa o filtro de data com o dia atual
+    const patioDateFilter = document.getElementById('patioDateFilter');
+    if (patioDateFilter) {
+        patioDateFilter.value = getBrazilTime().split('T')[0];
+    }
+
     // Carrega dados do servidor
     loadDataFromServer();
     
