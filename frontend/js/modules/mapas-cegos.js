@@ -237,7 +237,7 @@ function renderRows(m) {
         let html = `${createCell('desc', 'receb')} ${createCell('qty_nf', 'receb')} ${createCell('qty', 'conf')} ${createCell('nf', 'receb')} ${createCell('forn', 'receb')}`;
         
         // Botão de remover linha (apenas se não estiver bloqueado)
-        if (!locked) {
+        if (!locked && isRecebimento) {
             html += `<td class="actions-cell" style="width:40px; text-align:center;">
                 <button class="btn-remove-row" onclick="removeMapRow('${r.id}')" title="Remover Linha" style="background:none; border:none; color:#ef4444; cursor:pointer;">
                     <i class="fas fa-times-circle"></i>
@@ -253,7 +253,7 @@ function renderRows(m) {
     const footerActions = document.getElementById('mapFooterActions');
     if (footerActions) {
         footerActions.innerHTML = '';
-        if (!locked) {
+        if (!locked && isRecebimento) {
             const btnAdd = document.createElement('button');
             btnAdd.className = 'btn btn-edit';
             btnAdd.innerHTML = '<i class="fas fa-plus"></i> Adicionar Linha';

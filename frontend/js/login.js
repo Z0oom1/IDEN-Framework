@@ -17,7 +17,7 @@ const testAccounts = [
     { username: 'Outros', sector: 'conferente', subType: 'OUT', role: 'user', label: 'Conferente - OUTROS' },
     
     // RECEBIMENTO
-    { username: 'Caio', sector: 'recebimento', subType: null, role: 'user', label: 'Recebimento - Caio' },
+    { username: 'Caio', sector: 'recebimento', subType: null, role: 'operador', label: 'Recebimento - Caio' },
     { username: 'Balanca', sector: 'recebimento', subType: null, role: 'user', label: 'Recebimento - Balança' },
     
     // ADMIN

@@ -2672,22 +2672,49 @@ body.fast-mode .mc-item {
         }
 
         .mc-table { 
-            display: table !important; 
+            display: block !important; 
             width: 100% !important; 
-            min-width: 800px !important; /* Força a estrutura de tabela do PC */
+            min-width: 0 !important;
         }
 
-        .mc-table thead { display: table-header-group !important; }
-        .mc-table tbody { display: table-row-group !important; }
-        .mc-table tr { display: table-row !important; }
+        .mc-table thead { display: none !important; }
+        .mc-table tbody { display: block !important; }
+        .mc-table tr { 
+            display: block !important; 
+            margin-bottom: 15px !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            background: #fff !important;
+            padding: 10px !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
         .mc-table td { 
-            display: table-cell !important; 
-            padding: 0 !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-            border-right: 1px solid #e2e8f0 !important;
+            display: flex !important; 
+            align-items: center !important;
+            padding: 8px 10px !important;
+            border: none !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            position: relative !important;
+            padding-left: 40% !important;
+            text-align: left !important;
+            min-height: 45px !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .mc-table td::before { display: none !important; }
+        .mc-table td:last-child { border-bottom: none !important; }
+
+        .mc-table td::before { 
+            display: block !important; 
+            content: attr(data-label);
+            position: absolute;
+            left: 10px;
+            width: 35%;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
 
         .sheet input.cell { 
             font-size: 0.85rem !important; 

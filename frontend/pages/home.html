@@ -90,7 +90,7 @@
         const userSector = (safeUser.sector || '').toLowerCase();
         const userRoleRaw = (safeUser.role || '').toString().toLowerCase();
         const userSubType = safeUser.subType;
-        const isRecebimento = userSector === 'recebimento' || userRoleRaw.includes('admin') || userRoleRaw.includes('administrador');
+        const isRecebimento = userSector === 'recebimento' || userRoleRaw.includes('admin') || userRoleRaw.includes('administrador') || userRoleRaw.includes('operador');
         const isConferente = userSector === 'conferente';
         const isAdmin = userRoleRaw.includes('admin') || userRoleRaw.includes('administrador');
         const isEncarregado = userRoleRaw.includes('encarreg');
