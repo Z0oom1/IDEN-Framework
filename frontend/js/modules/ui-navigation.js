@@ -26,6 +26,7 @@ function navTo(view, el) {
     const mainSide = document.querySelector('.main-sidebar'); if (mainSide) mainSide.classList.remove('show-mobile');
 
     const titles = {
+        home: 'Dashboard Principal',
         patio: 'Controle de Pátio',
         mapas: 'Mapas Cegos',
         relatorios: 'Relatórios',
@@ -47,7 +48,7 @@ function navTo(view, el) {
 
     const appTitle = document.querySelector('.app-title');
     if (appTitle) {
-        appTitle.innerText = `CONTROLADORIA AW - ${currentTitle.toUpperCase()}`;
+        appTitle.innerText = `${currentTitle.toUpperCase()}`;
     }
 
     if (view === 'patio') renderPatio();

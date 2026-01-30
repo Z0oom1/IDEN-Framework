@@ -5,7 +5,7 @@
 
 ## 1. Introdução
 
-Este relatório detalha a implementação de um **Sistema de Módulos Dinâmicos** e um **Controle Granular de Permissões** no projeto `Wilson-backup`. O objetivo principal foi permitir que o Administrador do sistema possa criar e gerenciar novos menus e funcionalidades (módulos) sem a necessidade de alterar o código-fonte do servidor, além de obter controle total sobre os acessos de cada usuário, incluindo os novos módulos.
+Este relatório detalha a implementação de um **Sistema de Módulos Dinâmicos** e um **Controle Granular de Permissões** no projeto `IDEN-Framework-backup`. O objetivo principal foi permitir que o Administrador do sistema possa criar e gerenciar novos menus e funcionalidades (módulos) sem a necessidade de alterar o código-fonte do servidor, além de obter controle total sobre os acessos de cada usuário, incluindo os novos módulos.
 
 ## 2. Alterações na Arquitetura
 
@@ -61,7 +61,7 @@ O módulo `custom-modules.js` é responsável pela injeção dinâmica:
 
 As alterações implementadas transformam o sistema em uma plataforma mais flexível e extensível, atendendo integralmente aos requisitos de módulos dinâmicos e controle de acesso granular.
 
-O código-fonte modificado foi commitado e enviado para o repositório GitHub selecionado: `Z0oom1/Wilson-backup`.
+O código-fonte modificado foi commitado e enviado para o repositório GitHub selecionado: `Z0oom1/IDEN-Framework-backup`.
 
 ---
 **Arquivos Alterados:**

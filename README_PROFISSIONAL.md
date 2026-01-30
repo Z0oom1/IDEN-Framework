@@ -1,8 +1,8 @@
-# Wilson Control - Sistema Profissional de Pesagem e Carregamento
+# IDEN-Framework Control - Sistema Profissional de Pesagem e Carregamento
 
 ## 📋 Visão Geral
 
-O **Wilson Control** é um sistema profissional de gestão de pesagem, carregamento e controle de pátio para empresas de logística e distribuição. A versão 2.0 foi completamente reestruturada com arquitetura moderna, segurança de nível empresarial e banco de dados relacional.
+O **IDEN-Framework Control** é um sistema profissional de gestão de pesagem, carregamento e controle de pátio para empresas de logística e distribuição. A versão 2.0 foi completamente reestruturada com arquitetura moderna, segurança de nível empresarial e banco de dados relacional.
 
 ## 🎯 Funcionalidades Principais
 
@@ -62,8 +62,8 @@ O **Wilson Control** é um sistema profissional de gestão de pesagem, carregame
 
 1. **Clonar o repositório**
 ```bash
-git clone https://github.com/Z0oom1/Wilson-backup.git
-cd Wilson-backup
+git clone https://github.com/Z0oom1/IDEN-Framework-backup.git
+cd IDEN-Framework-backup
 ```
 
 2. **Instalar dependências do servidor**
@@ -227,4 +227,4 @@ Proprietary - Uso exclusivo autorizado
 
 ---
 
-**Desenvolvido com ❤️ para Wilson Control**
+**Desenvolvido com ❤️ para IDEN-Framework Control**

@@ -13,7 +13,7 @@ let db;
 async function getDb() {
   if (!db) {
     db = await open({
-      filename: path.join(__dirname, 'wilson.sqlite'),
+      filename: path.join(__dirname, 'iden-framework.sqlite'),
       driver: sqlite3.Database
     });
   }

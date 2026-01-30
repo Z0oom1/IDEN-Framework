@@ -307,7 +307,7 @@ function getBasePermissions(user) {
         perms.push('menu:patio', 'menu:mapas', 'menu:produtos');
     }
 
-    // Portaria (Geralmente mapeada como recebimento ou setor específico no Wilson)
+    // Portaria (Geralmente mapeada como recebimento ou setor específico no IDEN-Framework)
     if (role.includes('portaria')) {
         perms.push('menu:patio');
     }
@@ -442,7 +442,7 @@ window.navTo = function(view, el) {
         if (pt) pt.textContent = mod.label;
         
         const appTitle = document.querySelector('.app-title');
-        if (appTitle) appTitle.innerText = `CONTROLADORIA AW - ${mod.label.toUpperCase()}`;
+        if (appTitle) appTitle.innerText = `IDEN-Framework - ${mod.label.toUpperCase()}`;
 
         localStorage.setItem('aw_last_view', view);
         return;
@@ -456,7 +456,7 @@ window.navTo = function(view, el) {
 document.addEventListener('DOMContentLoaded', () => {
     // Escuta evento de atualização do sistema para reinjetar menus se necessário
     window.addEventListener('aw_data_loaded', () => {
-        console.log("Wilson Core: Dados carregados, injetando menus...");
+        console.log("IDEN-Framework Core: Dados carregados, injetando menus...");
         injectCustomMenus();
     });
 

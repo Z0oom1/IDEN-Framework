@@ -1,4 +1,4 @@
-# 🚀 Guia de Execução - Sistema Wilson
+# 🚀 Guia de Execução - Sistema IDEN-Framework
 
 Este documento explica como instalar as dependências e iniciar o sistema após a conversão para **SQLite**.
 
@@ -50,7 +50,7 @@ Para rodar o projeto, você deve sempre iniciar o servidor primeiro.
 ## 🗄️ Banco de Dados (SQLite)
 
 O sistema está configurado para usar **SQLite**. 
-*   **Onde está o banco?** O arquivo de dados fica em `server/wilson.sqlite`.
+*   **Onde está o banco?** O arquivo de dados fica em `server/iden-framework.sqlite`.
 *   **Vantagem:** Você **não precisa** de XAMPP, MySQL ou qualquer outro servidor externo. O banco é um arquivo local criado automaticamente.
 
 ---
@@ -67,4 +67,4 @@ Caso o banco seja reiniciado, os seguintes usuários são criados automaticament
 
 ---
 
-*Guia gerado para o Sistema Wilson - Backup*
+*Guia gerado para o Sistema IDEN-Framework - Backup*

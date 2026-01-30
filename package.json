@@ -1,5 +1,5 @@
 {
-  "name": "sistema-wilson",
+  "name": "iden-framework",
   "version": "3.6.9",
   "description": "Sistema de Controle",
   "main": "frontend/main.js",
@@ -10,8 +10,8 @@
     "build": "vite build && electron-builder"
   },
   "build": {
-    "appId": "com.wilson.controladoria",
-    "productName": "Controladoria AW",
+    "appId": "com.iden.framework",
+    "productName": "IDEN-Framework",
     "directories": {
       "output": "dist"
     },
